@@ -1,96 +1,130 @@
 /**
  * KATA Framework - Type Facade: Auth Domain
  *
- * Type definitions for authentication endpoints.
- * When openapi-types.ts is available (after `bun run api:sync`),
- * migrate Custom Types to Schema/Endpoint Types using @openapi imports.
+ * Request DTOs come from the OpenAPI contract (`bun run api:sync`). The
+ * contract declares NO response body for the auth routes, so the response
+ * shapes below are written by hand from the live wire format. They are PascalCase
+ * because the backend serializes the encrypted payload without the camelCase
+ * policy the rest of its pipeline applies (see ADR-0018).
  *
- * Consumed by: tests/components/api/AuthApi.ts
+ * The generated-principal DTOs (tenant, platform Admin, UserApp: ADR-0019) live here too,
+ * because they are only used to create test data for the login cases.
  *
- * Migration example:
- *   import type { components, paths } from '@openapi';
- *   export type TokenResponse = components['schemas']['TokenResponse'];
- *   type LoginPath = paths['/api/auth/login']['post'];
- *   export type LoginRequest = LoginPath['requestBody']['content']['application/json'];
+ * Consumed by: tests/components/api/{SecureApi,AuthApi,TenantsApi,UsersApi,UserAppsApi}.ts,
+ * tests/data/DataFactory.ts
  */
 
-// ============================================================================
-// Schema Types (from components.schemas)
-// ============================================================================
-
-// TODO: Uncomment after running `bun run api:sync` and replace Custom Types below
-// import type { components, paths } from '@openapi';
-// export type TokenResponse = components['schemas']['TokenResponse'];
-// export type UserInfo = components['schemas']['UserInfoModel'];
+import type { components } from '@openapi';
 
 // ============================================================================
-// Endpoint Types - POST /api/auth/login
+// Request DTOs (from the contract)
 // ============================================================================
 
-// TODO: Uncomment after running `bun run api:sync`
-// type LoginPath = paths['/api/auth/login']['post'];
-// export type LoginPayload = LoginPath['requestBody']['content']['application/json'];
-// export type LoginSuccessResponse = LoginPath['responses']['200']['content']['application/json'];
-// export type LoginErrorResponse = LoginPath['responses']['401']['content']['application/json'];
+/** POST /api/Auth/login/admin and /api/Auth/login/tenant */
+export type LoginPayload = components['schemas']['LoginDto'];
+
+/** POST /api/handshake */
+export type HandshakeRequest = components['schemas']['HandshakeRequestDto'];
+
+/** POST /api/Tenant */
+export type CreateTenantPayload = components['schemas']['CreateTenantDto'];
+
+/** POST /api/User (non-root platform Admin) */
+export type CreateAdminPayload = components['schemas']['CreateUserDto'];
+
+/** POST /api/tenants/{tenantId}/appusers */
+export type CreateUserAppPayload = components['schemas']['CreateUserAppDto'];
+
+/** PUT /api/tenants/{tenantId}/appusers/{id} */
+export type UpdateUserAppPayload = components['schemas']['UpdateUserAppDto'];
+
+/** POST /api/tenants/{tenantId}/tenant-admins (the backend generates the temporary password and the activation token) */
+export type CreateTenantAdminPayload = components['schemas']['CreateTenantAdminDto'];
+
+/** PUT /api/tenants/{tenantId}/tenant-admins/{id} (all fields optional: name, position, password, status) */
+export type UpdateTenantAdminPayload = components['schemas']['UpdateTenantAdminDto'];
+
+/** POST /api/Auth/tenant-admin/activate (anonymous): the token from the welcome mail and the new password */
+export type ActivateAccountPayload = components['schemas']['ActivateAccountDto'];
+
+/** POST /api/Auth/tenant-admin/resend-activation (anonymous) */
+export type ResendActivationPayload = components['schemas']['ResendActivationDto'];
 
 // ============================================================================
-// Endpoint Types - GET /api/auth/me
+// Response shapes (hand-written; the contract has no response content)
 // ============================================================================
 
-// TODO: Uncomment after running `bun run api:sync`
-// type MePath = paths['/api/auth/me']['get'];
-// export type MeResponse = MePath['responses']['200']['content']['application/json'];
+/** The envelope every route answers with. `Data` is null on failure. */
+export interface ApiEnvelope<T> {
+  Ok: boolean
+  CodeError: string | null
+  Error: string | null
+  ValidationErrors: unknown[]
+  Data: T | null
+  Warning: string | null
+}
 
-// ============================================================================
-// Custom Types (pre-sync definitions — replace with OpenAPI types when available)
-// ============================================================================
-
-/**
- * Login request payload.
- * TODO: Replace with OpenAPI endpoint type after sync.
- */
-export interface LoginPayload {
-  email: string
-  password: string
+/** POST /api/handshake. Answered in the clear: it is the call that opens the session. */
+export interface HandshakeData {
+  SessionId: string
+  /** Server ECDH P-256 public key, SPKI DER, base64. */
+  ServerPublicKey: string
 }
 
 /**
- * Token response from authentication endpoints.
- * Compatible with IdentityServer4 token response.
- * TODO: Replace with OpenAPI schema type after sync.
+ * POST /api/Auth/login/admin. `Token` and `RefreshToken` are secrets: the same
+ * values already travel as HttpOnly cookies, and tests assert on the cookies.
  */
-export interface TokenResponse {
-  access_token: string
-  token_type: string
-  expires_in: number
-  refresh_token?: string
-  scope?: string
+export interface AuthData {
+  Token: string
+  RefreshToken: string
+  UserType: string
+  UserId: number
+  UserName: string
+  RoleName: string | null
+  FullName: string | null
+  TenantId: number | null
+  TenantName: string | null
+  TenantLogo: string | null
+  MustChangePassword: boolean
+  IsRoot: boolean
+}
+
+/** GET /api/SecurityConfig/lockout: the global failed-login threshold of platform Admins. */
+export interface LockoutConfigData {
+  MaxFailedLoginAttempts: number
+}
+
+/** What the create routes (tenant, platform Admin, UserApp) answer in `Data`; only the id is used. */
+export interface CreatedEntityData {
+  Id: number
+}
+
+/** What POST /api/tenants/{tenantId}/tenant-admins answers in `Data`. The token and the password are NOT in it (they travel only by e-mail). */
+export interface TenantAdminData {
+  Id: number
+  MustChangePassword: boolean
+  PendingActivation: boolean
 }
 
 /**
- * Error response for failed authentication.
- * TODO: Replace with OpenAPI endpoint type after sync (if documented in spec).
+ * GET /api/tenants/{tenantId}/tenant-admins[/{id}]: the full record the list and the read
+ * answer with (the create answer is the short `TenantAdminData`). No secret in it.
  */
-export interface AuthErrorResponse {
-  error: string
-  statusCode?: number
-  identityServerError?: {
-    error: string
-    error_description: string
-  }
-  hint?: string
-}
-
-/**
- * User info response from /api/auth/me.
- * TODO: Replace with OpenAPI endpoint type after sync.
- */
-export interface UserInfoResponse {
-  user: {
-    id: string
-    email: string
-    name: string
-    createdAt: string
-    updatedAt: string
-  }
+export interface TenantAdminRecord {
+  Id: number
+  TenantId: number
+  UserName: string
+  FullName: string | null
+  Position: string | null
+  IsActive: boolean
+  IsLockedOut: boolean
+  FailedLoginAttempts: number
+  MustChangePassword: boolean
+  PendingActivation: boolean
+  CreatedAt: string
+  CreatedBy: string
+  UpdatedAt: string | null
+  UpdatedBy: string | null
+  TenantName: string | null
 }

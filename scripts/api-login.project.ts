@@ -61,7 +61,7 @@ import type { ApiLoginContext, ExtractedToken } from './lib/api-login-core';
  * `Environment` union in config/variables.ts (add 'qa' / 'production' in both
  * places when the project grows them).
  */
-export const environments = ['local', 'staging'] as const;
+export const environments = ['local'] as const;
 
 /**
  * Build the request body for the auth endpoint.

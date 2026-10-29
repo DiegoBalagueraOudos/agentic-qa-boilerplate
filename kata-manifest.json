@@ -1,58 +1,309 @@
 {
   "version": "1.0",
-  "generatedAt": "2026-09-21T13:42:36.993Z",
+  "generatedAt": "2026-10-29T13:50:50.713Z",
   "components": {
     "api": [
+      {
+        "name": "AccessApi",
+        "file": "AccessApi.ts",
+        "relativePath": "tests/components/api/AccessApi.ts",
+        "atcs": [
+          {
+            "id": "AUT-043",
+            "method": "rejectOutOfRoleCalls",
+            "line": 274
+          },
+          {
+            "id": "AUT-044",
+            "method": "rejectCrossTenantRead",
+            "line": 299
+          },
+          {
+            "id": "AUT-045",
+            "method": "rejectTamperedToken",
+            "line": 118
+          },
+          {
+            "id": "SEC-012",
+            "method": "refuseDeviceEndpointsWithoutCredentials",
+            "line": 169
+          }
+        ]
+      },
       {
         "name": "AuthApi",
         "file": "AuthApi.ts",
         "relativePath": "tests/components/api/AuthApi.ts",
         "atcs": [
           {
-            "id": "PROJ-101",
-            "method": "authenticateSuccessfully",
-            "line": 73
-          },
-          {
-            "id": "PROJ-102",
-            "method": "loginWithInvalidCredentials",
-            "line": 112
+            "id": "AUT-039",
+            "method": "reuseRefreshTokenAfterLogout",
+            "line": 148
           }
         ]
       },
       {
-        "name": "ExampleApi",
-        "file": "ExampleApi.ts",
-        "relativePath": "tests/components/api/ExampleApi.ts",
+        "name": "DataSecurityApi",
+        "file": "DataSecurityApi.ts",
+        "relativePath": "tests/components/api/DataSecurityApi.ts",
         "atcs": [
           {
-            "id": "PROJ-121",
-            "method": "createResourceSuccessfully",
-            "line": 57
+            "id": "SEC-004",
+            "method": "rejectInjectionInFiltersAndForms",
+            "line": 214
           },
           {
-            "id": "PROJ-122",
-            "method": "createResourceWithInvalidData",
-            "line": 88
+            "id": "SEC-011",
+            "method": "recordActorAndDateOnCriticalChanges",
+            "line": 298
           }
         ]
+      },
+      {
+        "name": "MailboxApi",
+        "file": "MailboxApi.ts",
+        "relativePath": "tests/components/api/MailboxApi.ts",
+        "atcs": []
+      },
+      {
+        "name": "OperatorsApi",
+        "file": "OperatorsApi.ts",
+        "relativePath": "tests/components/api/OperatorsApi.ts",
+        "atcs": [
+          {
+            "id": "OPE-002",
+            "method": "createOperatorWithCodeNameAndUrl",
+            "line": 259
+          },
+          {
+            "id": "OPE-003",
+            "method": "rejectInvalidOperatorCodes",
+            "line": 306
+          },
+          {
+            "id": "OPE-004",
+            "method": "rejectDuplicateOperatorCode",
+            "line": 321
+          },
+          {
+            "id": "OPE-005",
+            "method": "rejectInvalidOperatorNames",
+            "line": 376
+          },
+          {
+            "id": "OPE-006",
+            "method": "rejectInvalidServiceUrls",
+            "line": 392
+          },
+          {
+            "id": "OPE-007",
+            "method": "editNameAndUrlKeepingCode",
+            "line": 410
+          },
+          {
+            "id": "OPE-008",
+            "method": "refuseDeactivatingOperatorInUse",
+            "line": 534
+          },
+          {
+            "id": "OPE-009",
+            "method": "refuseDeletingOperatorInUse",
+            "line": 491
+          },
+          {
+            "id": "OPE-011",
+            "method": "refuseOperatorsToNonAdminRoles",
+            "line": 658
+          }
+        ]
+      },
+      {
+        "name": "SecureApi",
+        "file": "SecureApi.ts",
+        "relativePath": "tests/components/api/SecureApi.ts",
+        "atcs": []
+      },
+      {
+        "name": "SessionSecurityApi",
+        "file": "SessionSecurityApi.ts",
+        "relativePath": "tests/components/api/SessionSecurityApi.ts",
+        "atcs": [
+          {
+            "id": "SEC-005",
+            "method": "setSessionCookieFlags",
+            "line": 461
+          },
+          {
+            "id": "SEC-007",
+            "method": "keepSecretsOutOfResponses",
+            "line": 503
+          },
+          {
+            "id": "SEC-008",
+            "method": "lockAndThrottleBruteForceLogins",
+            "line": 579
+          }
+        ]
+      },
+      {
+        "name": "TenantAdminsApi",
+        "file": "TenantAdminsApi.ts",
+        "relativePath": "tests/components/api/TenantAdminsApi.ts",
+        "atcs": [
+          {
+            "id": "ADM-001",
+            "method": "createTenantAdminWithCorporateEmail",
+            "line": 534
+          },
+          {
+            "id": "ADM-002",
+            "method": "rejectInvalidAndPersonalEmails",
+            "line": 438
+          },
+          {
+            "id": "ADM-003",
+            "method": "rejectDuplicateEmail",
+            "line": 602
+          },
+          {
+            "id": "ADM-004",
+            "method": "rejectOversizedNameAndPosition",
+            "line": 482
+          },
+          {
+            "id": "ADM-005",
+            "method": "editNamePositionPasswordAndStatus",
+            "line": 658
+          },
+          {
+            "id": "ADM-006",
+            "method": "rejectWeakPasswordOnEdit",
+            "line": 732
+          },
+          {
+            "id": "ADM-007",
+            "method": "unlockLockedTenantAdmin",
+            "line": 770
+          },
+          {
+            "id": "ADM-008",
+            "method": "resendActivationWithNewToken",
+            "line": 825
+          },
+          {
+            "id": "ADM-010",
+            "method": "rejectDeleteOfOnlyAdmin",
+            "line": 860
+          },
+          {
+            "id": "ADM-012",
+            "method": "rejectInactiveTenantAdminLogin",
+            "line": 908
+          }
+        ]
+      },
+      {
+        "name": "TenantsApi",
+        "file": "TenantsApi.ts",
+        "relativePath": "tests/components/api/TenantsApi.ts",
+        "atcs": []
+      },
+      {
+        "name": "TransportSecurityApi",
+        "file": "TransportSecurityApi.ts",
+        "relativePath": "tests/components/api/TransportSecurityApi.ts",
+        "atcs": [
+          {
+            "id": "SEC-001",
+            "method": "rejectUnencryptedAndReplayedPayloads",
+            "line": 580
+          },
+          {
+            "id": "SEC-002",
+            "method": "rejectMutationsWithoutValidCsrf",
+            "line": 519
+          },
+          {
+            "id": "SEC-006",
+            "method": "sendSecurityHeaders",
+            "line": 432
+          },
+          {
+            "id": "SEC-009",
+            "method": "hideSwaggerOutsideDevelopment",
+            "line": 455
+          },
+          {
+            "id": "SEC-010",
+            "method": "restrictCrossOriginAccess",
+            "line": 483
+          }
+        ]
+      },
+      {
+        "name": "UserAppsApi",
+        "file": "UserAppsApi.ts",
+        "relativePath": "tests/components/api/UserAppsApi.ts",
+        "atcs": [
+          {
+            "id": "AUT-011",
+            "method": "unlockLockedUserApp",
+            "line": 163
+          }
+        ]
+      },
+      {
+        "name": "UsersApi",
+        "file": "UsersApi.ts",
+        "relativePath": "tests/components/api/UsersApi.ts",
+        "atcs": []
       }
     ],
     "ui": [
       {
-        "name": "ExamplePage",
-        "file": "ExamplePage.ts",
-        "relativePath": "tests/components/ui/ExamplePage.ts",
+        "name": "ActivationPage",
+        "file": "ActivationPage.ts",
+        "relativePath": "tests/components/ui/ActivationPage.ts",
         "atcs": [
           {
-            "id": "PROJ-131",
-            "method": "submitFormWithValidData",
-            "line": 99
+            "id": "AUT-020",
+            "method": "activateWithMailedToken",
+            "line": 270
           },
           {
-            "id": "PROJ-132",
-            "method": "submitFormWithInvalidEmail",
-            "line": 122
+            "id": "AUT-021",
+            "method": "openActivationLinkWithToken",
+            "line": 337
+          },
+          {
+            "id": "AUT-022",
+            "method": "activateWithInvalidToken",
+            "line": 367
+          },
+          {
+            "id": "AUT-023",
+            "method": "rejectWeakPasswords",
+            "line": 396
+          },
+          {
+            "id": "AUT-024",
+            "method": "rejectMismatchedConfirmation",
+            "line": 451
+          },
+          {
+            "id": "AUT-025",
+            "method": "resendActivationAndRejectOldToken",
+            "line": 309
+          },
+          {
+            "id": "AUT-026",
+            "method": "resendActivationForUnknownUser",
+            "line": 475
+          },
+          {
+            "id": "AUT-027",
+            "method": "keepForcedChangePasswordOnNavigation",
+            "line": 508
           }
         ]
       },
@@ -62,14 +313,199 @@
         "relativePath": "tests/components/ui/LoginPage.ts",
         "atcs": [
           {
-            "id": "PROJ-111",
-            "method": "loginSuccessfully",
-            "line": 84
+            "id": "AUT-001",
+            "method": "showModeSelectorAndAdminForm",
+            "line": 264
           },
           {
-            "id": "PROJ-112",
-            "method": "loginWithInvalidCredentials",
-            "line": 101
+            "id": "AUT-002",
+            "method": "loginAsAdminSuccessfully",
+            "line": 287
+          },
+          {
+            "id": "AUT-003",
+            "method": "loginAsTenantAdminSuccessfully",
+            "line": 803
+          },
+          {
+            "id": "AUT-004",
+            "method": "loginAsUserAppSuccessfully",
+            "line": 691
+          },
+          {
+            "id": "AUT-005",
+            "method": "redirectMustChangePasswordTenantAdmin",
+            "line": 831
+          },
+          {
+            "id": "AUT-006",
+            "method": "submitEmptyAdminForm",
+            "line": 307
+          },
+          {
+            "id": "AUT-007",
+            "method": "loginAsAdminWithInvalidCredentials",
+            "line": 329
+          },
+          {
+            "id": "AUT-008",
+            "method": "loginWithInactiveOrDeletedUser",
+            "line": 721
+          },
+          {
+            "id": "AUT-009",
+            "method": "lockGeneratedAdminAfterFailedLogins",
+            "line": 472
+          },
+          {
+            "id": "AUT-010",
+            "method": "showRateLimitNoticeAfterFailedLogins",
+            "line": 360
+          },
+          {
+            "id": "AUT-012",
+            "method": "loginInTheWrongMode",
+            "line": 756
+          },
+          {
+            "id": "AUT-013",
+            "method": "openLoginWhileSignedIn",
+            "line": 784
+          },
+          {
+            "id": "AUT-034",
+            "method": "logoutAfterInactivity",
+            "line": 632
+          },
+          {
+            "id": "AUT-038",
+            "method": "retryAfterCryptoSessionExpired",
+            "line": 554
+          }
+        ]
+      },
+      {
+        "name": "OperatorsPage",
+        "file": "OperatorsPage.ts",
+        "relativePath": "tests/components/ui/OperatorsPage.ts",
+        "atcs": [
+          {
+            "id": "OPE-001",
+            "method": "listAndSearchOperators",
+            "line": 167
+          },
+          {
+            "id": "OPE-012",
+            "method": "showCounterInSyncAfterCreate",
+            "line": 234
+          },
+          {
+            "id": "SEC-003",
+            "method": "showHostileNamesAsPlainText",
+            "line": 95
+          }
+        ]
+      },
+      {
+        "name": "SessionPage",
+        "file": "SessionPage.ts",
+        "relativePath": "tests/components/ui/SessionPage.ts",
+        "atcs": [
+          {
+            "id": "AUT-030",
+            "method": "refreshTransparentlyOnExpiredGet",
+            "line": 152
+          },
+          {
+            "id": "AUT-031",
+            "method": "askToRepeatMutationAfterRefresh",
+            "line": 268
+          },
+          {
+            "id": "AUT-032",
+            "method": "clearSessionWhenRefreshFails",
+            "line": 187
+          },
+          {
+            "id": "AUT-033",
+            "method": "refreshOnceForConcurrentRequests",
+            "line": 221
+          },
+          {
+            "id": "AUT-035",
+            "method": "keepSessionAfterActivity",
+            "line": 335
+          },
+          {
+            "id": "AUT-037",
+            "method": "loseSessionWhenOtherTabLogsOut",
+            "line": 394
+          }
+        ]
+      },
+      {
+        "name": "ShellPage",
+        "file": "ShellPage.ts",
+        "relativePath": "tests/components/ui/ShellPage.ts",
+        "atcs": [
+          {
+            "id": "AUT-014",
+            "method": "logoutManually",
+            "line": 200
+          },
+          {
+            "id": "AUT-015",
+            "method": "logoutWithBackendDown",
+            "line": 234
+          },
+          {
+            "id": "AUT-036",
+            "method": "reloadWithActiveSession",
+            "line": 263
+          },
+          {
+            "id": "AUT-040",
+            "method": "followRouteMatrixByDirectUrl",
+            "line": 287
+          },
+          {
+            "id": "AUT-041",
+            "method": "showOnlyMenuOfTheRole",
+            "line": 345
+          },
+          {
+            "id": "AUT-042",
+            "method": "redirectRootByRole",
+            "line": 367
+          }
+        ]
+      },
+      {
+        "name": "TenantAdminsPage",
+        "file": "TenantAdminsPage.ts",
+        "relativePath": "tests/components/ui/TenantAdminsPage.ts",
+        "atcs": [
+          {
+            "id": "ADM-009",
+            "method": "showActivationWithoutReload",
+            "line": 173
+          },
+          {
+            "id": "ADM-013",
+            "method": "loadAdministratorsTabWithinThreshold",
+            "line": 129
+          }
+        ]
+      },
+      {
+        "name": "TenantsPage",
+        "file": "TenantsPage.ts",
+        "relativePath": "tests/components/ui/TenantsPage.ts",
+        "atcs": [
+          {
+            "id": "OPE-013",
+            "method": "listActiveOperatorsInMainSelector",
+            "line": 29
           }
         ]
       }
@@ -77,21 +513,74 @@
   },
   "steps": [
     {
-      "name": "ExampleSteps",
-      "file": "ExampleSteps.ts",
-      "relativePath": "tests/components/steps/ExampleSteps.ts",
+      "name": "GeneratedPrincipalsSteps",
+      "file": "GeneratedPrincipalsSteps.ts",
+      "relativePath": "tests/components/steps/GeneratedPrincipalsSteps.ts",
       "methods": [
-        "authenticateUser",
-        "createTestResource",
-        "navigateAsAuthenticatedUser"
+        "cleanup",
+        "create",
+        "createExtraUserApp",
+        "deactivateUserApp",
+        "deleteUserApp",
+        "readAdminLockoutThreshold"
+      ]
+    },
+    {
+      "name": "MailedAccountSteps",
+      "file": "MailedAccountSteps.ts",
+      "relativePath": "tests/components/steps/MailedAccountSteps.ts",
+      "methods": [
+        "cleanup",
+        "createPendingTenantAdmin"
+      ]
+    },
+    {
+      "name": "SecurityDataSteps",
+      "file": "SecurityDataSteps.ts",
+      "relativePath": "tests/components/steps/SecurityDataSteps.ts",
+      "methods": [
+        "adoptOperatorIfCreated",
+        "cleanup",
+        "createAuditedOperator",
+        "createAuditedTenant",
+        "createHostileOperator",
+        "createInjectionTextOperator",
+        "createPlainOperator",
+        "createTenantUsingOperator",
+        "open",
+        "updateOperatorWithForgedAuditField"
+      ]
+    },
+    {
+      "name": "TenantAdminAccountSteps",
+      "file": "TenantAdminAccountSteps.ts",
+      "relativePath": "tests/components/steps/TenantAdminAccountSteps.ts",
+      "methods": [
+        "activateAccount",
+        "cleanup",
+        "confirmResentMail",
+        "confirmWelcomeMail",
+        "prepareSecondTenant",
+        "prepareTenant",
+        "waitForMailSlot"
+      ]
+    },
+    {
+      "name": "UiSessionSteps",
+      "file": "UiSessionSteps.ts",
+      "relativePath": "tests/components/steps/UiSessionSteps.ts",
+      "methods": [
+        "signInAndReachDashboard",
+        "signInAsTenantUserAndReachLanding",
+        "signOut"
       ]
     }
   ],
   "summary": {
-    "totalComponents": 4,
-    "totalATCs": 8,
-    "apiComponents": 2,
-    "uiComponents": 2,
-    "stepsModules": 1
+    "totalComponents": 19,
+    "totalATCs": 75,
+    "apiComponents": 12,
+    "uiComponents": 7,
+    "stepsModules": 5
   }
 }

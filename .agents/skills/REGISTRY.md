@@ -1,6 +1,6 @@
 # Skill Registry (auto-generated)
 
-> Generated: `2026-10-11T22:44:14.423Z`
+> Generated: `2026-10-24T02:38:23.388Z`
 > Generator: `bun scripts/build-skill-registry.ts`
 > Protocol: `.agents/skills/agentic-qa-core/references/skill-resolver.md`
 
@@ -8,7 +8,7 @@ This file is the per-session compact-rules cache for the Skill Resolver protocol
 The orchestrator copies one or more `## Skill: <slug>` blocks below into every subagent briefing under `## Project Standards (auto-resolved)`.
 Subagents trust those compact rules and only read the full SKILL.md when explicitly instructed.
 
-Skills indexed: 26
+Skills indexed: 29
 
 ---
 ## Skill: acli
@@ -87,6 +87,27 @@ Skills indexed: 26
 **Read full SKILL.md when**: walking the full 4-phase new-project setup, listing env vars or MCPs in detail, or answering which deck covers a given topic.
 
 > Source: `.agents/skills/agentic-qa-onboard/SKILL.md` · phase: `bootstrap` · kind: `workflow` · extraction strategy: A
+
+---
+
+## Skill: bug-report-local
+
+**Purpose**: Local-files variant (no Jira, no Xray) of the bug-reporting step.
+
+**Compact Rules**:
+- Local only. Reports live in the bugs area of the QA root; the contract is `references/local-bug-format.md`. Never call Jira, Xray or acli tools; Jira prose in the cited report template does not apply.
+- Never create a file or folder before the user chooses "create the report". Phases 1 and 2 are read-only; the draft is shown first.
+- Judge before proposing: a selector, timeout, data or precondition failure is a TEST defect (no report); a connection or gateway failure is ENVIRONMENT (no report); only a reproduced failure that contradicts the case's expected result is a PRODUCT candidate.
+- The bug id `<case id>-BUG-<n>` is allocated ONLY by `bun run qa:local bug new`. Never count folders or invent a number by hand.
+- Never copy a trace, `.zip`, `.har`, video or `.env`, nor a cookie, `Authorization` / `Set-Cookie` / `Cookie` value, token, password or the Playwright call log of an error message. API evidence is a scrubbed, truncated excerpt, never a full body.
+- A visual or positional bug runs the existing `bug-screenshot-annotation` skill unchanged (KEY = the case id, BUG-KEY = n, its Jira embed step skipped, `python` never `python3`, intermediates in the session scratchpad). A non-visual bug gets no image. Never a hand-made or generated image.
+- Pillow is not installed and the user declined it: the annotation crop is optional; the raw screenshot is the base image; if the visual evidence cannot be produced, write the report with the raw screenshot and say so.
+- List an evidence file in the report only after verifying it on disk. Copy the failure screenshot, never move it.
+- Every `qa:local bug` write is done inline by the orchestrator. The skill never edits a case file; the case link is `qa:local defect <case id> <bug id>` only after a failing recorded run and the user's decision.
+
+**Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
+
+> Source: `.agents/skills/bug-report-local/SKILL.md` · phase: `unknown` · kind: `workflow` · stage owner · source: frontmatter `compact_rules` (verbatim)
 
 ---
 
@@ -598,6 +619,30 @@ Skills indexed: 26
 
 ---
 
+## Skill: test-automation-local
+
+**Purpose**: Local-files variant (no Jira, no Xray, no TMS) of /test-automation.
+
+**Compact Rules**:
+- Local files only. Cases are the Markdown tree under the QA root; contracts are `test-documentation-local/references/local-case-format.md` and `references/local-handoff.md`. Never call Jira, Xray or acli tools; Jira / Xray / TMS prose in a cited reference does not apply.
+- Plan -> Code -> Review, in order, never skipping Plan. Wait for plan approval before any code.
+- Only `candidate` + `pendiente` cases from `bun run qa:local next`. Never automate a `manual`, `deferred` or `no_aplica` verdict; never invent a missing precondition. The manual-run state of the user's matrix is not an input: every case is tested again from scratch, and the observations section is non-authoritative notes.
+- 1 ATC : 1 case id. `@atc('<case id>')` as a string literal; never merge case ids; an ATC never calls another ATC.
+- State changes ONLY through `bun run qa:local status|results|defect`. Never hand-edit case YAML (verdict, lifecycle, `id_defecto`, `automation`, `last_run`). Never re-rank `ola` / `prioridad`.
+- API-surface cases that need the ADR-0018 encrypted-session fixture are NOT automated and NOT hand-rolled with plaintext calls: record the block in the plan and return them to the user.
+- Credentials come from `.env` at run time via `config.testUser`; the skill never reads, prints or writes them. Locators inline, role / visible text / `formControlName` first, extracted only at 2+ uses.
+- Never put `@step` or `@atc` on a method whose arguments carry a token, cookie or credential: the decorator masks only a short list of key names. A token in an explicit header is wrapped so a transport failure rethrows a sanitised error. `trace: 'off'` at FILE level in a spec that handles a live session token. After any Code or fix step the orchestrator searches the generated report folders for token patterns (counts only).
+- A failing automated run is a new finding. Only after it fails may `qa:local defect <ID> <ref>` record a reference, and only then, if the user keeps the test green, annotate `test.fail(true, 'DEFECT <ref>')` while still asserting the CORRECT behaviour. How `test.fail` composes with `@atc` is unverified: confirm on the first such case.
+- Product bug found by a failing test: a failure judged a product defect is handed to `/bug-report-local`, which proposes the report and waits for the user's OK; this skill does not file the bug.
+- The test command may print all-passed and still end with exit code 9 (a Bun teardown assertion on Windows): judge the run by the report lines and `reports/atc_results.json`, report the observed code, never fix the runtime from a case. Types and lint must still exit 0.
+- Review needs the 3 verifiers (`test`, `types:check`, `lint:check`) plus a REQUIRED separate verifier (`/pr-review-lead` or `/judgment-day`) that did not write the code. On any failure STOP: retry / skip / abort, no auto-fix.
+
+**Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
+
+> Source: `.agents/skills/test-automation-local/SKILL.md` · phase: `unknown` · kind: `workflow` · stage owner · source: frontmatter `compact_rules` (verbatim)
+
+---
+
 ## Skill: test-documentation
 
 **Purpose**: Analyze, prioritize, and document test cases in TMS (Jira/Xray), or repair an existing Story-ATS-ATP-ATR-TC cascade through a sealed expl...
@@ -623,6 +668,26 @@ Skills indexed: 26
 **Read full SKILL.md when**: resolving TMS modality, computing ROI, writing Gherkin, or wiring US-ATP-ATR-TC traceability links.
 
 > Source: `.agents/skills/test-documentation/SKILL.md` · phase: `unknown` · kind: `workflow` · stage owner · source: frontmatter `compact_rules` (verbatim)
+
+---
+
+## Skill: test-documentation-local
+
+**Purpose**: Local-files variant (no Jira, no Xray, no TMS) of /test-documentation.
+
+**Compact Rules**:
+- Local files only. The case store is the Markdown tree under the QA root; the contract is `references/local-case-format.md`. Never read or write the user-story folder of the context tree, the Jira mirror (`.context/PBI/`) or any secret.
+- Never call Jira, Xray or acli tools, even if a cited reference says to. Jira / Xray / TMS prose inside a cited reference does not apply; `references/local-case-format.md` wins.
+- Verdict (`automatizacion`) and lifecycle (`estado_automatizacion`) change ONLY through `bun run qa:local verdict|status|defect|results`. Never hand-edit YAML for those fields or for `id_defecto`, `automation`, `last_run`.
+- Only `candidate` + `pendiente` cases are offered to automation. A `manual`, `deferred` or `no_aplica` case is never offered.
+- Priority (`ola`, `prioridad`) is user-owned. Never re-rank; `qa:local next` only sorts.
+- The manual-run state of the user's matrix is not an input: a case is its id, scenario and expected result, and every case is tested again from scratch. The observations section is non-authoritative notes of a previous manual run, never a gate.
+- Known defect only after a failing AUTOMATED run: `qa:local defect <ID> <ref>` is refused without `last_run.result=FAIL`; the reference comes from the user, never from prose. Never invent a missing precondition: propose `manual` or `deferred`.
+- The imported verdict is respected. Change it only when ROI or a hard blocker justifies it, record the reason, and tell the user.
+
+**Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
+
+> Source: `.agents/skills/test-documentation-local/SKILL.md` · phase: `unknown` · kind: `workflow` · stage owner · source: frontmatter `compact_rules` (verbatim)
 
 ---
 

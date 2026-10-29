@@ -35,7 +35,7 @@ import {
 // Environment Type Definitions
 // ============================================
 
-export type Environment = 'local' | 'staging'; // Add more when needed (e.g., 'production')
+export type Environment = 'local';
 
 // ============================================
 // Test-User Credentials (variables from .env)
@@ -54,18 +54,16 @@ export type Environment = 'local' | 'staging'; // Add more when needed (e.g., 'p
 const {
   LOCAL_USER_EMAIL, // Used when TEST_ENV=local
   LOCAL_USER_PASSWORD, // Used when TEST_ENV=local
-  STAGING_USER_EMAIL, // Used when TEST_ENV=staging
-  STAGING_USER_PASSWORD, // Used when TEST_ENV=staging
+  LOCAL_TENANT_ADMIN_EMAIL, // Used when TEST_ENV=local
+  LOCAL_TENANT_ADMIN_PASSWORD, // Used when TEST_ENV=local
+  MAILTRAP_API_TOKEN, // Test mailbox, one for the whole project
+  MAILTRAP_SANDBOX_ID, // Test mailbox, one for the whole project
 } = process.env;
 
 const userCredentialsMap: Record<Environment, { email: string, password: string }> = {
   local: {
     email: LOCAL_USER_EMAIL ?? '',
     password: LOCAL_USER_PASSWORD ?? '',
-  },
-  staging: {
-    email: STAGING_USER_EMAIL ?? '',
-    password: STAGING_USER_PASSWORD ?? '',
   },
 };
 
@@ -75,7 +73,20 @@ const userCredentialsMap: Record<Environment, { email: string, password: string 
  */
 const userCredentialVarNames: Record<Environment, { email: string, password: string }> = {
   local: { email: 'LOCAL_USER_EMAIL', password: 'LOCAL_USER_PASSWORD' },
-  staging: { email: 'STAGING_USER_EMAIL', password: 'STAGING_USER_PASSWORD' },
+};
+
+// Second principal per environment: the activated TenantAdmin account. Read only
+// by `config.tenantAdminUser`; kept out of `envDataMap` so its typing stays as is.
+const tenantAdminCredentialsMap: Record<Environment, { email: string, password: string }> = {
+  local: {
+    email: LOCAL_TENANT_ADMIN_EMAIL ?? '',
+    password: LOCAL_TENANT_ADMIN_PASSWORD ?? '',
+  },
+};
+
+/** Variable names of the TenantAdmin pair, for the error message only. */
+const tenantAdminCredentialVarNames: Record<Environment, { email: string, password: string }> = {
+  local: { email: 'LOCAL_TENANT_ADMIN_EMAIL', password: 'LOCAL_TENANT_ADMIN_PASSWORD' },
 };
 
 // ============================================
@@ -86,7 +97,6 @@ export const env = {
   ...CORE_ENV,
   current: CORE_ENV.current as Environment,
   isLocal: CORE_ENV.current === 'local',
-  isStaging: CORE_ENV.current === 'staging',
 } as const;
 
 // ============================================
@@ -98,14 +108,9 @@ const envDataMap: Record<
   { base: string, api: string, user: { email: string, password: string } }
 > = {
   local: {
-    base: 'http://localhost:3000',
-    api: 'http://localhost:3000/api',
+    base: 'https://localhost:18443',
+    api: 'https://localhost:18443/api',
     user: userCredentialsMap.local,
-  },
-  staging: {
-    base: 'https://dojo.upexgalaxy.com',
-    api: 'https://dojo.upexgalaxy.com/api',
-    user: userCredentialsMap.staging,
   },
 };
 // The point of use for TEST_ENV. A value this file does not declare used to
@@ -147,6 +152,39 @@ function readTestUser(): { email: string, password: string } {
   );
 }
 
+/**
+ * The active environment's TenantAdmin test account, read at the point of use.
+ * Throws a NAMED error (variable names only, never values) when either half is empty.
+ */
+function readTenantAdminUser(): { email: string, password: string } {
+  const user = tenantAdminCredentialsMap[env.current];
+  if (user.email !== '' && user.password !== '') { return user; }
+  const names = tenantAdminCredentialVarNames[env.current];
+  const missing = [user.email === '' ? names.email : null, user.password === '' ? names.password : null]
+    .filter((n): n is string => n !== null);
+  throw new Error(
+    `TenantAdmin user for TEST_ENV=${env.current} is not set: ${missing.join(', ')} `
+    + '(declared in config/variables.ts, values in .env).',
+  );
+}
+
+/**
+ * The Mailtrap Email Sandbox that receives the activation e-mails, read at the point of use.
+ * One mailbox for the whole project (not per environment). Throws a NAMED error
+ * (variable names only, never values) when either variable is empty.
+ */
+function readMailbox(): { apiToken: string, sandboxId: string } {
+  const apiToken = MAILTRAP_API_TOKEN ?? '';
+  const sandboxId = MAILTRAP_SANDBOX_ID ?? '';
+  if (apiToken !== '' && sandboxId !== '') { return { apiToken, sandboxId }; }
+  const missing = [apiToken === '' ? 'MAILTRAP_API_TOKEN' : null, sandboxId === '' ? 'MAILTRAP_SANDBOX_ID' : null]
+    .filter((n): n is string => n !== null);
+  throw new Error(
+    `Test mailbox is not set: ${missing.join(', ')} `
+    + '(declared in config/variables.ts, values in .env).',
+  );
+}
+
 // ============================================
 // Main Configuration Object
 // ============================================
@@ -156,20 +194,38 @@ export const config = {
   baseUrl: envData.base,
   apiUrl: envData.api,
 
-  // Authentication config (UPEX Dojo endpoints - relative to apiUrl)
+  // Authentication config (Validate API endpoints - relative to apiUrl). See ADR-0018.
   auth: {
-    loginEndpoint: '/auth/login',
-    tokenEndpoint: '/auth/login', // Endpoint to intercept for token (used by page.waitForResponse)
-    meEndpoint: '/auth/me',
-    tokenLifetimeSeconds: 86400, // 24 hours (1 day)
-    // Storage paths for authenticated sessions
-    storageStatePath: '.auth/user.json',
-    apiStatePath: '.auth/api-state.json',
+    // Machine-client login (bearer flow of `bun run api:login`). Deferred: not used by the Playwright setups.
+    loginEndpoint: '/Auth/login/api',
+    // Encrypted human session: handshake first, then the admin login on top of it
+    handshakeEndpoint: '/handshake',
+    adminLoginEndpoint: '/Auth/login/admin',
+    // Storage paths for authenticated sessions (all under the ignored .auth/)
+    storageStatePath: '.auth/user.json', // browser: cookies + localStorage from the real SPA login
+    // The SPA keeps its UI session metadata (role, name, tenant; no tokens) in sessionStorage
+    // under this key (core/auth/token.service.ts). Playwright's storageState does not carry
+    // sessionStorage, so ui-setup saves it here and the `page` fixture restores it.
+    uiSessionKey: 'auth_session',
+    uiSessionPath: '.auth/ui-session.json',
+    apiSessionPath: '.auth/api-session.json', // API request context: the three session cookies
+    cryptoSessionPath: '.auth/crypto-session.json', // session id + AES key; secret
+    apiStatePath: '.auth/api-state.json', // bearer state written by `bun run api:login` only
   },
 
   // Test User (configure in .env). A getter: validated on first read, by name.
   get testUser(): { email: string, password: string } {
     return readTestUser();
+  },
+
+  // TenantAdmin test account (second principal inside the same TEST_ENV). Validated on first read, by name.
+  get tenantAdminUser(): { email: string, password: string } {
+    return readTenantAdminUser();
+  },
+
+  // Test mailbox (Mailtrap Email Sandbox) for the activation e-mails. Validated on first read, by name.
+  get mailbox(): { apiToken: string, sandboxId: string } {
+    return readMailbox();
   },
 
   // TMS / Browser / Reporting — synced (config/variables.core.ts)

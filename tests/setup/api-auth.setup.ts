@@ -1,61 +1,44 @@
 /**
  * KATA Architecture - API Auth Setup (Project)
  *
- * Authenticates via API directly using AuthApi.authenticateSuccessfully() ATC.
- * Generates a JWT token for use by Integration tests.
+ * Mints an encrypted administrator session the way a real client does
+ * (ADR-0018): ECDH handshake, then the admin login inside an AES-GCM envelope.
+ * No plaintext fallback, no CSRF bypass.
+ *
+ * Persists, under the ignored `.auth/` directory only:
+ * - api-session.json:    the three session cookies (Playwright storage state)
+ * - crypto-session.json: session id + AES key. SECRET: never log or commit it.
+ *
+ * Per-run mint, no refresh: the server drops a crypto session after 30 idle
+ * minutes (8 h at most). Re-run setup when a suite starts failing with
+ * CRYPTO_SESSION_EXPIRED.
  *
  * Dependencies: global-setup
- * Dependents: integration
+ * Dependents: integration, smoke-api
  */
-
-import type { ApiState } from '@data/types';
 
 import { writeFileSync } from 'node:fs';
 import { test as setup } from '@TestFixture';
-import { attachRequestResponseToAllure } from '@utils/allure';
 import { config } from '@variables';
 
-const apiStateFile = config.auth.apiStatePath;
+// File-level trace off: the trace would record the real credential sent in the login request.
+setup.use({ trace: 'off' });
 
-/**
- * API Authentication Setup
- *
- * 1. Uses AuthApi.authenticateSuccessfully() ATC
- * 2. Saves token to api-state.json for integration tests
- */
 setup('API Setup: authenticate via API', async ({ api }) => {
   console.log('[API Setup] Starting API authentication...');
-  console.log(`[API Setup] Target: ${config.apiUrl}${config.auth.loginEndpoint}`);
+  console.log(`[API Setup] Target: ${config.apiUrl}${config.auth.adminLoginEndpoint}`);
 
-  // Use AuthApi ATC (UPEX Dojo uses 'email' field)
-  const credentials = {
-    email: config.testUser.email,
-    password: config.testUser.password,
-  };
-  const [response, tokenData] = await api.auth.authenticateSuccessfully(credentials);
-
-  // Attach to Allure for debugging
-  await attachRequestResponseToAllure({
-    url: response.url(),
-    method: 'POST',
-    responseBody: tokenData,
-    requestBody: { email: credentials.email, password: '***' },
+  const [, , session] = await api.auth.startAdminSession({
+    UserName: config.testUser.email,
+    Password: config.testUser.password,
   });
+  console.log('[API Setup] Administrator session established');
 
-  console.log('[API Setup] Authentication successful');
-  console.log(`[API Setup] Token type: ${tokenData.token_type}`);
-  console.log(`[API Setup] Expires in: ${tokenData.expires_in} seconds`);
+  // Prove the session works before anything depends on it
+  await api.auth.verifySessionAuthorized();
+  console.log('[API Setup] Authorized read succeeded');
 
-  // Save token to file for use by integration tests
-  const apiState: ApiState = {
-    token: tokenData.access_token,
-    tokenType: tokenData.token_type,
-    expiresIn: tokenData.expires_in,
-    refreshToken: tokenData.refresh_token ?? null,
-    source: 'api-login',
-    createdAt: new Date().toISOString(),
-  };
-
-  writeFileSync(apiStateFile, JSON.stringify(apiState, null, 2));
-  console.log(`[API Setup] Token saved to ${apiStateFile}`);
+  await api.request.storageState({ path: config.auth.apiSessionPath });
+  writeFileSync(config.auth.cryptoSessionPath, JSON.stringify(session, null, 2), { mode: 0o600 });
+  console.log(`[API Setup] Session saved to ${config.auth.apiSessionPath} and ${config.auth.cryptoSessionPath}`);
 });

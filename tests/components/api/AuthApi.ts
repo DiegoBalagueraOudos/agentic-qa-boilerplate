@@ -1,139 +1,177 @@
 /**
  * KATA Architecture - Layer 3: Auth API Component
  *
- * API component for authentication operations.
- * Handles login, token management, and user info retrieval.
+ * Session plumbing for the Validate API (ADR-0018): opens the encrypted session
+ * and signs in as the platform administrator. The tenant sign-in, the logout and
+ * the sanitised-error wrapper shared with the other components live in SecureApi. `startAdminSession`,
+ * `verifySessionAuthorized` and `logout` are `@step` helpers, not ATCs: they exist
+ * so `api-setup` and API specs have an authenticated context. The one ATC here is
+ * AUT-039 (refresh token reused after logout); `refreshWithToken` and the other
+ * private helpers carry secrets and have no decorator. The behaviour of the login
+ * itself (AUT-002, AUT-007...) is owned by the ATCs that exercise it.
  *
- * ATCs follow flow-based design: each ATC is an ACTION + VERIFICATION,
- * not a simple GET. Read-only operations are helpers (no @atc).
- *
- * TODO: Replace 'PROJ' in @atc IDs with your Jira project key (e.g., @atc('UPEX-101'))
- *
- * Endpoints:
- * - POST /api/auth/login - Authenticate and get JWT token
- * - GET /api/auth/me - Get current user info (requires auth)
+ * Endpoints (relative to config.apiUrl):
+ * - POST /handshake          - open the ECDH session (answered in the clear)
+ * - POST /Auth/login/admin   - encrypted body; sets access_token, refresh_token, csrf_token cookies
+ * - GET  /Tenant             - used only to prove the session is authorized
+ * - POST /Auth/logout        - encrypted body `{}`; revokes the refresh token, clears the cookies
+ * - POST /Auth/refresh       - encrypted body `{}`; reads only the `refresh_token` cookie
  */
 
 import type { APIResponse } from '@playwright/test';
-import type { AuthErrorResponse, LoginPayload, TokenResponse, UserInfoResponse } from '@schemas/auth.types';
-import type { TestContextOptions } from '@TestContext';
+import type { ApiEnvelope, AuthData, LoginPayload } from '@schemas/auth.types';
+import type { CryptoSessionState } from '@utils/cryptoSession';
 
-import { ApiBase } from '@api/ApiBase';
-import { expect } from '@playwright/test';
+import { SecureApi } from '@api/SecureApi';
+import { expect, request as playwrightRequest } from '@playwright/test';
 import { atc, step } from '@utils/decorators';
 
 // Re-export types for consumers that import from AuthApi
-export type { AuthErrorResponse, LoginPayload, TokenResponse, UserInfoResponse } from '@schemas/auth.types';
+export type { ApiEnvelope, AuthData, LoginPayload } from '@schemas/auth.types';
 
-// ============================================
-// Auth API Component
-// ============================================
+const REFRESH_ENDPOINT = '/Auth/refresh';
 
-export class AuthApi extends ApiBase {
-  constructor(options: TestContextOptions) {
-    super(options);
-  }
-
-  // ============================================
-  // Helpers - Read-only operations (no @atc)
-  // ============================================
-
+export class AuthApi extends SecureApi {
   /**
-   * Helper: Get current authenticated user info.
+   * Open a crypto session and sign in as the platform administrator.
    *
-   * Read-only GET — used as a verification step inside ATCs
-   * or for test-level assertions. Not an ATC because it's
-   * just a data retrieval, not a complete action flow.
+   * Fixed assertions: 200, `Ok`, an `Admin` user type, and the three session
+   * cookies present. Tokens are never read from the body; the cookies are the
+   * session.
    *
-   * @returns Tuple with response and user info
+   * @returns The login response and the crypto session to persist for later processes
    */
   @step
-  async getCurrentUser(): Promise<[APIResponse, UserInfoResponse]> {
-    const [response, body] = await this.apiGET<UserInfoResponse>(this.config.auth.meEndpoint);
-    return [response, body];
-  }
-
-  // ============================================
-  // ATCs - Complete Test Cases (ACTION + VERIFICATION)
-  // ============================================
-
-  /**
-   * ATC: Authenticate with valid credentials - expects success (200)
-   *
-   * Complete flow:
-   * 1. POST credentials to /auth/login (ACTION)
-   * 2. GET /auth/me to confirm session is valid (VERIFICATION)
-   * 3. Validate token response and user info
-   *
-   * The token is automatically set for subsequent API requests.
-   *
-   * @param credentials - Email and password
-   * @returns Tuple with response, token data, and sent payload
-   */
-  @atc('PROJ-101')
-  async authenticateSuccessfully(
+  async startAdminSession(
     credentials: LoginPayload,
-  ): Promise<[APIResponse, TokenResponse, LoginPayload]> {
-    // ACTION: POST login credentials
-    const [response, body, sentPayload] = await this.apiPOST<TokenResponse, LoginPayload>(
-      this.config.auth.loginEndpoint,
+  ): Promise<[APIResponse, ApiEnvelope<AuthData>, CryptoSessionState]> {
+    const session = await this.openCryptoSession();
+    const [response, body] = await this.securePOST<AuthData, LoginPayload>(
+      this.config.auth.adminLoginEndpoint,
       credentials,
     );
 
-    // Fixed assertions - validates successful authentication
     expect(response.status()).toBe(200);
-    expect(body.access_token).toBeDefined();
-    expect(body.token_type).toBe('Bearer');
-    expect(body.expires_in).toBeGreaterThan(0);
+    expect(body.Ok).toBe(true);
+    expect(body.Data?.UserType).toBe('Admin');
 
-    // Store token for subsequent requests
-    this.setAuthToken(body.access_token);
+    const { cookies } = await this.request.storageState();
+    expect(cookies.map(c => c.name)).toEqual(expect.arrayContaining(this.sessionCookies));
+    expect(cookies.find(c => c.name === 'access_token')?.httpOnly).toBe(true);
 
-    // VERIFICATION: Confirm the session is valid via GET /auth/me
-    const [meResponse, meBody] = await this.getCurrentUser();
-    expect(meResponse.status()).toBe(200);
-    expect(meBody.user).toBeDefined();
-    expect(meBody.user.email).toBe(credentials.email);
-
-    return [response, body, sentPayload];
+    return [response, body, session];
   }
 
   /**
-   * ATC: Login with invalid credentials - expects error (401)
-   *
-   * Complete flow:
-   * 1. POST invalid credentials to /auth/login (ACTION)
-   * 2. GET /auth/me to confirm NO session was created (VERIFICATION)
-   * 3. Validate error response and unauthorized access
-   *
-   * @param credentials - Invalid email or password
-   * @returns Tuple with error response and sent payload
+   * Prove the current session is authorized: a read-only, encrypted GET that
+   * answers 401 without a valid cookie. Needs the session cookies AND the
+   * crypto session, so it fails if either half was lost between processes.
    */
-  @atc('PROJ-102')
-  async loginWithInvalidCredentials(
-    credentials: LoginPayload,
-  ): Promise<[APIResponse, AuthErrorResponse, LoginPayload]> {
-    // ACTION: POST invalid credentials
-    const [response, body, sentPayload] = await this.apiPOST<AuthErrorResponse, LoginPayload>(
-      this.config.auth.loginEndpoint,
-      credentials,
-    );
+  @step
+  async verifySessionAuthorized(): Promise<void> {
+    const [response, body] = await this.secureGET<{ Data: unknown[] }>('/Tenant?Page=1&PageSize=1');
 
-    // Fixed assertions - validates error response (UPEX Dojo returns 401)
-    expect(response.status()).toBe(401);
-    expect(response.ok()).toBe(false);
-    expect(body.error).toBeDefined();
+    expect(response.status()).toBe(200);
+    expect(body.Ok).toBe(true);
+    expect(body.Data?.Data).toBeDefined();
+  }
 
-    // VERIFICATION: Confirm no session was created via GET /auth/me → 401
-    const savedToken = this.authToken;
-    this.clearAuthToken();
-    const [meResponse] = await this.getCurrentUser();
-    expect(meResponse.status()).toBe(401);
-    // Restore token if one existed before this ATC
-    if (savedToken) {
-      this.setAuthToken(savedToken);
+  /** Sign out the current session: encrypted `{}` body, revokes the refresh token. */
+  @step
+  async logout(): Promise<[APIResponse, ApiEnvelope<unknown>]> {
+    return this.postLogout();
+  }
+
+  /**
+   * Ask for a new session with an EXPLICIT refresh token instead of the one in
+   * the cookie jar. The server reads only the `refresh_token` cookie, so the
+   * value travels as a `Cookie` header (set on the shared default headers for
+   * this one call only and always removed). Deliberately NOT a `@step`: step
+   * titles print their arguments and the token is a secret. Errors go through
+   * `withSecretGuard` (no call log, no headers, no token).
+   */
+  private async refreshWithToken(refreshToken: string): Promise<[APIResponse, ApiEnvelope<AuthData>]> {
+    this.requestHeaders.Cookie = `refresh_token=${refreshToken}`;
+    try {
+      return await this.withSecretGuard('refresh', 'token', async () =>
+        this.securePOST<AuthData, Record<string, never>>(REFRESH_ENDPOINT, {}));
     }
+    finally {
+      delete this.requestHeaders.Cookie;
+    }
+  }
 
-    return [response, body, sentPayload];
+  /** The `refresh_token` cookie value currently in this component's jar (a secret: never log it). */
+  private async currentRefreshToken(): Promise<string | undefined> {
+    const { cookies } = await this.request.storageState();
+    return cookies.find(c => c.name === 'refresh_token')?.value;
+  }
+
+  /**
+   * Positive control for AUT-039: a LIVE refresh token replayed through the same
+   * explicit-Cookie mechanism must be accepted (200, Ok), so the later 401 means
+   * "revoked" and not "mangled / unknown". The token comes from a second
+   * disposable admin session (own cookie jar, own crypto session); the replay
+   * goes through this component's clean jar with a fresh crypto session. Both
+   * sessions are signed out afterwards, tolerating cleanup errors.
+   */
+  private async assertLiveRefreshTokenIsAccepted(credentials: LoginPayload): Promise<void> {
+    const controlContext = await playwrightRequest.newContext({ ignoreHTTPSErrors: true });
+    const control = new AuthApi({ request: controlContext });
+    try {
+      await control.startAdminSession(credentials);
+      const liveToken = await control.currentRefreshToken();
+      expect(liveToken, 'refresh_token cookie issued by the control login').toBeTruthy();
+
+      await this.openCryptoSession();
+      const [response, body] = await this.refreshWithToken(liveToken as string);
+      expect(response.status()).toBe(200);
+      expect(body.Ok).toBe(true);
+    }
+    finally {
+      // Cleanup: neither the refreshed session (this jar) nor the control one may stay alive
+      await this.logout().catch(() => undefined);
+      await control.logout().catch(() => undefined);
+      await controlContext.dispose().catch(() => undefined);
+    }
+  }
+
+  /**
+   * AUT-039: a refresh token captured before logout is rejected after logout.
+   *
+   * Runs on its OWN session (the caller starts from an empty cookie jar). First a
+   * positive control proves the explicit-Cookie replay delivers a valid token
+   * (200); then: sign in, keep the refresh token in memory, sign out, open a NEW
+   * crypto session (logout drops the old one; without it the rejection would be
+   * a false positive, CRYPTO_SESSION_EXPIRED), then replay the old token.
+   */
+  @atc('AUT-039')
+  async reuseRefreshTokenAfterLogout(
+    credentials: LoginPayload,
+  ): Promise<[APIResponse, ApiEnvelope<AuthData>]> {
+    await this.assertLiveRefreshTokenIsAccepted(credentials);
+
+    await this.startAdminSession(credentials);
+    const refreshToken = await this.currentRefreshToken();
+    expect(refreshToken, 'refresh_token cookie issued by the login').toBeTruthy();
+
+    const [logoutResponse, logoutBody] = await this.logout();
+    expect(logoutResponse.status()).toBe(200);
+    expect(logoutBody.Ok).toBe(true);
+
+    await this.openCryptoSession();
+    const [response, body] = await this.refreshWithToken(refreshToken as string);
+
+    expect(response.status()).toBe(401);
+    expect(body.Ok).toBe(false);
+    expect(body.CodeError).toBe('INVALID_CREDENTIALS');
+    expect(body.Error).toMatch(/Sesi.n expirada/);
+    expect(body.Data).toBeNull();
+
+    const { cookies: after } = await this.request.storageState();
+    expect(after.map(c => c.name)).not.toContain('access_token');
+    expect(after.map(c => c.name)).not.toContain('refresh_token');
+
+    return [response, body];
   }
 }

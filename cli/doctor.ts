@@ -105,6 +105,22 @@ const VAR_HINTS: Record<string, { hint: string, where: string }> = {
     hint: 'Password for the local test user',
     where: 'A test account in your local dev environment',
   },
+  LOCAL_TENANT_ADMIN_EMAIL: {
+    hint: 'Email for the local TenantAdmin test account',
+    where: 'An activated TenantAdmin account in your local environment',
+  },
+  LOCAL_TENANT_ADMIN_PASSWORD: {
+    hint: 'Password for the local TenantAdmin test account',
+    where: 'An activated TenantAdmin account in your local environment',
+  },
+  MAILTRAP_API_TOKEN: {
+    hint: 'API token of the Mailtrap test mailbox',
+    where: 'Mailtrap -> Email Sandbox -> API token (read + delete on the sandbox)',
+  },
+  MAILTRAP_SANDBOX_ID: {
+    hint: 'Id of the Mailtrap test sandbox',
+    where: 'Mailtrap -> Email Sandbox -> the sandbox id',
+  },
   STAGING_USER_EMAIL: {
     hint: 'Email for the staging test user',
     where: 'A test account in your staging environment',

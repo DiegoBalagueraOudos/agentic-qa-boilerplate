@@ -16,8 +16,13 @@
 
 import type { TestContextOptions } from '@TestContext';
 
-import { ExamplePage } from '@ui/ExamplePage';
+import { ActivationPage } from '@ui/ActivationPage';
 import { LoginPage } from '@ui/LoginPage';
+import { OperatorsPage } from '@ui/OperatorsPage';
+import { SessionPage } from '@ui/SessionPage';
+import { ShellPage } from '@ui/ShellPage';
+import { TenantAdminsPage } from '@ui/TenantAdminsPage';
+import { TenantsPage } from '@ui/TenantsPage';
 import { UiBase } from '@ui/UiBase';
 
 // ============================================
@@ -28,14 +33,34 @@ export class UiFixture extends UiBase {
   /** Login page component - handles authentication flows */
   readonly login: LoginPage;
 
-  /** Example component - reference only */
-  readonly example: ExamplePage;
+  /** Activation page component - account activation and resend flows */
+  readonly activation: ActivationPage;
+
+  /** Shell page component - signed-in shell: logout, reload and the role matrix (routes, menu, root redirect) */
+  readonly shell: ShellPage;
+
+  /** Session page component - token refresh and inactivity behaviours */
+  readonly session: SessionPage;
+
+  /** Operators page component - hostile names rendering (SEC-003), list and search (OPE-001), counter after create (OPE-012) */
+  readonly operators: OperatorsPage;
+
+  /** Tenant admins page component - load time of the Administradores tab (ADM-013) */
+  readonly tenantAdmins: TenantAdminsPage;
+
+  /** Tenants page component - tenant list and creation form (OPE-013) */
+  readonly tenants: TenantsPage;
 
   constructor(options: TestContextOptions) {
     super(options);
 
     // All components receive the same options (same page context)
     this.login = new LoginPage(options);
-    this.example = new ExamplePage(options);
+    this.activation = new ActivationPage(options);
+    this.shell = new ShellPage(options);
+    this.session = new SessionPage(options);
+    this.operators = new OperatorsPage(options);
+    this.tenantAdmins = new TenantAdminsPage(options);
+    this.tenants = new TenantsPage(options);
   }
 }

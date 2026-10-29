@@ -303,7 +303,8 @@ describe('runApiLogin', () => {
     expect(help).toContain('--profile <name>');
     expect(help).toContain('scripts/api-login.project.ts');
     expect(help).toContain('scripts/lib/api-login-core.ts');
-    expect(help).toContain('local, staging');
+    expect(help).toContain('local');
+    expect(help).not.toContain('staging');
   });
 });
 

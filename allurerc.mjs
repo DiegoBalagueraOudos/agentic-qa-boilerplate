@@ -26,7 +26,7 @@ import { defineConfig } from 'allure';
  */
 
 export default defineConfig({
-  name: 'Agentic QA Boilerplate',
+  name: 'Validate QA',
   output: './allure-report',
   // Persisted outside allure-report/ so `bun run test:clean` (which wipes
   // allure-results/ and allure-report/) never erases trend history.
@@ -53,7 +53,7 @@ export default defineConfig({
   plugins: {
     awesome: {
       options: {
-        reportLanguage: 'en',
+        reportLanguage: 'es',
       },
     },
   },

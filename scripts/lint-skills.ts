@@ -890,6 +890,8 @@ const EXAMPLE_ARTIFACTS = [
   'tests/data/fixtures/example.json',
   'tests/e2e/module-example',
   'tests/integration/module-example',
+  'tests/e2e/dashboard/dashboard.test.ts',
+  'tests/integration/auth/user-session.test.ts',
 ];
 
 function isExampleArtifact(path: string): boolean {

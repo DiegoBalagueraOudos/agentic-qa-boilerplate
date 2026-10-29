@@ -20,8 +20,6 @@ const baseURL = config.baseUrl;
 export default defineConfig({
   testDir: './tests',
   testMatch: /.*\.test\.ts/,
-  // Exclude example files - they are reference templates, not functional tests
-  testIgnore: ['**/module-example/**'],
 
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -140,13 +138,14 @@ export default defineConfig({
     },
 
     // ============================================
-    // Integration Tests - API only with token
+    // Integration Tests - API only, with the encrypted admin session
+    // (cookies here; session id + AES key via tests/components/TestFixture.ts)
     // ============================================
     {
       name: 'integration',
       testMatch: '**/integration/**/*.test.ts',
       dependencies: ['api-setup'],
-      use: {},
+      use: { storageState: config.auth.apiSessionPath },
     },
 
     // ============================================
@@ -180,7 +179,7 @@ export default defineConfig({
       grep: /@critical/,
       testMatch: '**/integration/**/*.test.ts',
       dependencies: ['api-setup'],
-      use: {},
+      use: { storageState: config.auth.apiSessionPath },
     },
 
     // ============================================

@@ -80,6 +80,8 @@ Who authors: a human QA architect / lead directly, **or** an AI workflow that de
 | [ADR-0015](./ADR-0015-no-shell-autoloader.md) | No shell autoloader: each process loads its own `.env`, nothing exports it into a shell (direnv removed) | Accepted | — | — |
 | [ADR-0016](./ADR-0016-documentation-contracts.md) | Documentation contracts: `LINT.IfChange` region markers, a push and CI gate with a `Docs-Checked:` escape, an edit-time reminder (maintainers only in v1) | Accepted | — | — |
 | [ADR-0017](./ADR-0017-route-adherence.md) | The prompt hook scopes, ranks and caps its `ROUTE:` lines, states when to read them, and re-surfaces an unread one once on Claude Code | Accepted | — | — |
+| [ADR-0018](./ADR-0018-auth-in-tests-encrypted-session-contract.md) | Auth in tests: honour the encrypted-session contract of the Validate API (discovered) | Accepted | — | — |
+| [ADR-0019](./ADR-0019-generated-test-principals-via-admin-api.md) | Test data: generated tenants, admins and app users are created through the Administrator API (extends ADR-0018) | Accepted | — | — |
 
 > Keep this table in sync whenever an ADR is added or its status changes. It is the fast index every session reads first.
 

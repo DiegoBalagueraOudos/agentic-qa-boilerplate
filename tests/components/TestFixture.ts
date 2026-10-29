@@ -14,19 +14,19 @@
  * maintaining consistency across hybrid tests.
  *
  * Usage in E2E tests:
- *   test('example', async ({ test }) => {
- *     await test.ui.login.loginSuccessfully(credentials);
- *     await test.api.auth.getCurrentUser();
+ *   test('example', async ({ ui }) => {
+ *     await ui.login.goto();
+ *     await ui.login.loginAsAdminSuccessfully(credentials);
  *   });
  *
- * Usage in API-only tests:
+ * Usage in API-only tests (the encrypted session comes from api-setup):
  *   test('example', async ({ api }) => {
- *     await api.auth.authenticateSuccessfully(credentials);
+ *     await api.auth.verifySessionAuthorized();
  *   });
  */
 
-import type { ApiState } from '@data/types';
 import type { APIRequestContext, Page } from '@playwright/test';
+import type { CryptoSessionState } from '@utils/cryptoSession';
 import type { Environment } from '@variables';
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -37,6 +37,37 @@ import { TestContext } from '@TestContext';
 import { UiFixture } from '@UiFixture';
 import { config, env } from '@variables';
 import { label } from 'allure-js-commons';
+
+// ============================================
+// Crypto session persisted by api-setup (ADR-0018)
+// ============================================
+
+/**
+ * Read the crypto session `api-setup` wrote to `.auth/crypto-session.json`.
+ * Null when the file is absent or unreadable: the first secure call then fails
+ * by name ("No crypto session"), which is the right place to find out.
+ */
+function readCryptoSession(): CryptoSessionState | null {
+  const path = config.auth.cryptoSessionPath;
+  if (!existsSync(path)) {
+    return null;
+  }
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8')) as CryptoSessionState;
+  }
+  catch {
+    return null;
+  }
+}
+
+/**
+ * Read the SPA's UI session metadata `ui-setup` saved (raw JSON string, no
+ * tokens). Null when absent: the SPA then starts signed out.
+ */
+function readUiSession(): string | null {
+  const path = config.auth.uiSessionPath;
+  return existsSync(path) ? readFileSync(path, 'utf-8') : null;
+}
 
 // ============================================
 // E2E Fixture (Page + API)
@@ -58,27 +89,11 @@ class TestFixture extends TestContext {
     this.api = new ApiFixture(options);
     this.ui = new UiFixture(options);
 
-    // Load token from file if exists (for E2E tests with storageState)
-    this.loadTokenFromFile();
-  }
-
-  /**
-   * Load auth token from api-state.json file.
-   * Called automatically in constructor for E2E tests.
-   */
-  private loadTokenFromFile(): void {
-    const apiStatePath = config.auth.apiStatePath;
-    if (existsSync(apiStatePath)) {
-      try {
-        const content = readFileSync(apiStatePath, 'utf-8');
-        const apiState: ApiState = JSON.parse(content);
-        if (apiState.token) {
-          this.api.setAuthToken(apiState.token);
-        }
-      }
-      catch {
-        // Silently ignore - token will be null
-      }
+    // Hybrid tests ride the browser's cookies (page.request); the crypto session
+    // is the API half only, so it is optional here.
+    const session = readCryptoSession();
+    if (session) {
+      this.api.setCryptoSession(session);
     }
   }
 
@@ -150,6 +165,23 @@ export const test = base.extend<{
     { auto: true },
   ],
 
+  // Restores the SPA's sessionStorage metadata that storageState cannot carry
+  // (see ui-auth.setup.ts). Only when this context holds the session cookie, so a
+  // spec that starts signed out (`storageState: empty`, the login cases) stays
+  // signed out. Limitation: a hard reload after an in-test logout restores it again.
+  page: async ({ page, context }, use) => {
+    const uiSession = readUiSession();
+    const hasSessionCookie = (await context.cookies()).some(c => c.name === 'access_token');
+    if (uiSession !== null && hasSessionCookie) {
+      await context.addInitScript(([key, value]) => {
+        if (sessionStorage.getItem(key) === null) {
+          sessionStorage.setItem(key, value);
+        }
+      }, [config.auth.uiSessionKey, uiSession] as const);
+    }
+    await use(page);
+  },
+
   // Full test fixture with UI + API (for E2E tests)
   test: async ({ page, request }, use) => {
     const fixture = new TestFixture(page, request);
@@ -166,19 +198,11 @@ export const test = base.extend<{
   api: async ({ request }, use) => {
     const apiFixture = new ApiFixture({ request });
 
-    // Load token from file if exists (for integration tests)
-    const apiStatePath = config.auth.apiStatePath;
-    if (existsSync(apiStatePath)) {
-      try {
-        const content = readFileSync(apiStatePath, 'utf-8');
-        const apiState: ApiState = JSON.parse(content);
-        if (apiState.token) {
-          apiFixture.setAuthToken(apiState.token);
-        }
-      }
-      catch {
-        // Silently ignore - token will be null
-      }
+    // The cookies arrive with the project's storageState (.auth/api-session.json);
+    // the session id and AES key come from .auth/crypto-session.json.
+    const session = readCryptoSession();
+    if (session) {
+      apiFixture.setCryptoSession(session);
     }
 
     await use(apiFixture);
