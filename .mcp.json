@@ -27,26 +27,26 @@
         "SLACK_MCP_ADD_MESSAGE_TOOL": "true"
       }
     },
-  "dbhub": {
-    "command": "bunx",
-    "args": [
-      "-p",
-      "varlock@1.20.0",
-      "varlock",
-      "run",
-      "--no-redact-stdout",
-      "--inject",
-      "vars",
-      "--filter",
-      "DBHUB_TYPE,DBHUB_HOST,DBHUB_PORT,DBHUB_DATABASE,DBHUB_USER,DBHUB_PASSWORD",
-      "--",
-      "bunx",
-      "-y",
-      "@bytebase/dbhub@1.2.1",
-      "--config",
-      "dbhub.toml"
-    ]
-},
+    "dbhub": {
+      "command": "bunx",
+      "args": [
+        "-p",
+        "varlock@1.20.0",
+        "varlock",
+        "run",
+        "--no-redact-stdout",
+        "--inject",
+        "vars",
+        "--filter",
+        "DBHUB_TYPE,DBHUB_HOST,DBHUB_PORT,DBHUB_DATABASE,DBHUB_USER,DBHUB_PASSWORD",
+        "--",
+        "bunx",
+        "-y",
+        "@bytebase/dbhub@1.2.1",
+        "--config",
+        "dbhub.toml"
+      ]
+    },
     "openapi": {
       "command": "bunx",
       "args": [
