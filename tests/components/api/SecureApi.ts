@@ -377,6 +377,27 @@ export class SecureApi extends ApiBase {
       }));
   }
 
+  /**
+   * POST of one file as `multipart/form-data` (CSV imports). The backend does NOT
+   * encrypt multipart bodies (`PayloadDecryptionMiddleware` only handles JSON), so
+   * there is no envelope: the session id (the server may still encrypt the answer)
+   * plus CSRF are enough, and no Content-Type is set so Playwright adds the boundary.
+   */
+  protected async secureMultipartPOST<T>(
+    endpoint: string,
+    file: { name: string, mimeType: string, buffer: Buffer },
+  ): Promise<[APIResponse, ApiEnvelope<T>]> {
+    return this.send<T>('POST multipart', async (session) => {
+      const response = await this.request.post(this.apiEndpoint(endpoint), {
+        headers: await this.mutationHeaders(session),
+        multipart: { file },
+        timeout: this.config.browser.defaultTimeout,
+      });
+      const body = await this.getResponseJsonObject<EncryptedEnvelope | ApiEnvelope<T>>(response);
+      return [response, body] as const;
+    });
+  }
+
   /** PATCH without a body (for example `/unlock`): same headers as secureDELETE. */
   protected async securePATCH<T>(endpoint: string): Promise<[APIResponse, ApiEnvelope<T>]> {
     return this.send<T>('PATCH', async session =>

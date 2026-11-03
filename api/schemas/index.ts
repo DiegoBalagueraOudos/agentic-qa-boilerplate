@@ -11,6 +11,7 @@
  */
 
 export type * from './auth.types';
+export type * from './resources.types';
 export type * from './security.types';
 
 // Add new domain facades here:

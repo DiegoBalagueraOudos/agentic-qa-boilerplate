@@ -65,6 +65,9 @@ export interface TenantReadData {
 export interface PagedData<T> {
   Data: T[]
   TotalRecords: number
+  Page?: number
+  PageSize?: number
+  TotalPages?: number
 }
 
 // ============================================================================

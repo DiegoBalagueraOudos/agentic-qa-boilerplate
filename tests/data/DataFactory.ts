@@ -23,6 +23,7 @@ import type {
   CreateTenantPayload,
   CreateUserAppPayload,
 } from '@schemas/auth.types';
+import type { CreateBranchPayload, CreateDevicePayload, CreateTerminalPayload } from '@schemas/resources.types';
 import type { CreateOperatorPayload } from '@schemas/security.types';
 
 import { faker } from '@faker-js/faker';
@@ -352,6 +353,287 @@ export class DataFactory {
   /** Valid-looking but wrong password for any generated account */
   static createWrongPassword(): string {
     return this.createActivationPassword();
+  }
+
+  // ============================================
+  // BRANCHES (SUC cases)
+  // ============================================
+
+  /** A department the backend accepts (`ValidationConstants.Branch.ColombianDepartments`); the validator's own example. */
+  static readonly validDepartment = 'Cundinamarca';
+
+  /** Unique branch code of EXACTLY `length` characters: `QAX` + upper-case alphanumerics. */
+  static createBranchCodeOfLength(length: number): string {
+    return `QAX${faker.string.alphanumeric({ length: Math.max(length - 3, 0), casing: 'upper' })}`.slice(0, Math.max(length, 3));
+  }
+
+  /** Unique branch name of EXACTLY `length` characters, `QAX` first (so cleanup and searches recognise it). */
+  static createBranchNameOfLength(length: number): string {
+    return `QAX${faker.string.alpha({ length: Math.max(length - 3, 0), casing: 'lower' })}`.slice(0, Math.max(length, 3));
+  }
+
+  /** Address of EXACTLY `length` characters (the backend adds no pattern, only a maximum). */
+  static createAddressOfLength(length: number): string {
+    return faker.string.alpha({ length, casing: 'lower' });
+  }
+
+  /** A valid branch: unique code and name, a short address and a valid department. */
+  static createBranchPayload(overrides?: Partial<CreateBranchPayload>): CreateBranchPayload {
+    const code = this.createBranchCodeOfLength(10);
+    return {
+      BranchCode: code,
+      BranchName: `QAX Sede ${code.slice(3)}`,
+      Address: `Calle ${faker.number.int({ min: 1, max: 99 })} # ${faker.number.int({ min: 1, max: 99 })}-${faker.number.int({ min: 1, max: 99 })}`,
+      Department: this.validDepartment,
+      ...overrides,
+    };
+  }
+
+  /**
+   * A valid terminal for `branchId`: unique `QAX` name and a unique MAC (six hex octets with colons,
+   * `ValidationConstants.Terminal.MacPattern`). A MAC is global to the tenant, so it is always generated.
+   */
+  static createTerminalPayload(branchId: number, overrides?: Partial<CreateTerminalPayload>): CreateTerminalPayload {
+    return {
+      BranchId: branchId,
+      TerminalName: `QAX Terminal ${faker.string.alphanumeric({ length: 6, casing: 'upper' })}`,
+      Mac: faker.internet.mac(':').toUpperCase(),
+      DeviceType: 'FIJO',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Branch codes the backend must refuse (SUC-003, the case's own rule: empty or longer than 50):
+   * empty, whitespace only and 51 characters. The documented boundary (a 50-character code is ACCEPTED)
+   * is built by the ATC with `createBranchCodeOfLength(50)`.
+   */
+  static createInvalidBranchCodes(): InputRow[] {
+    return [
+      { label: 'empty', value: '' },
+      { label: 'whitespace only', value: '   ' },
+      { label: '51 characters', value: this.createBranchCodeOfLength(51) },
+    ];
+  }
+
+  /** Branch names the backend must refuse (SUC-004): empty, whitespace only and 101 characters (limit 100). */
+  static createInvalidBranchNames(): InputRow[] {
+    return [
+      { label: 'empty', value: '' },
+      { label: 'whitespace only', value: '   ' },
+      { label: '101 characters', value: this.createBranchNameOfLength(101) },
+    ];
+  }
+
+  /** CSV text for `import-csv`: header `CodSede,NombreSede,DireccionSede,Departamento` (`CsvBranchRowDto`) and one row per entry (no quoting needed for generated data). */
+  static createBranchCsv(rows: { code: string, name: string, address?: string, department?: string }[], header = 'CodSede,NombreSede,DireccionSede,Departamento'): string {
+    return [header, ...rows.map(row => [row.code, row.name, row.address ?? '', row.department ?? ''].join(','))].join('\n');
+  }
+
+  // ============================================
+  // TERMINALS AND DEVICES (TER cases)
+  // ============================================
+
+  /** A unique, well-formed MAC: six hex pairs joined by `separator`, upper or lower case. */
+  static createMac(separator: ':' | '-' = ':', casing: 'upper' | 'lower' = 'upper'): string {
+    const mac = faker.internet.mac(separator);
+    return casing === 'upper' ? mac.toUpperCase() : mac.toLowerCase();
+  }
+
+  /** A unique 15-digit IMEI (the only valid shape). */
+  static createImei(): string {
+    return faker.string.numeric({ length: 15, allowLeadingZeros: true });
+  }
+
+  /** Terminal name of EXACTLY `length` characters, `QAX` first (so searches and cleanup recognise it). */
+  static createTerminalNameOfLength(length: number): string {
+    return `QAX${faker.string.alpha({ length: Math.max(length - 3, 0), casing: 'lower' })}`.slice(0, Math.max(length, 3));
+  }
+
+  /** A unique host name the backend accepts (letters, digits, hyphens, dots). */
+  static createHostName(): string {
+    return `qax-host-${faker.string.alphanumeric({ length: 8, casing: 'lower' })}.local`;
+  }
+
+  /** A valid mobile terminal: IMEI included. */
+  static createMobileTerminalPayload(branchId: number, overrides?: Partial<CreateTerminalPayload>): CreateTerminalPayload {
+    return this.createTerminalPayload(branchId, { DeviceType: 'MOVIL', Imei: this.createImei(), ...overrides });
+  }
+
+  /** A valid device for `terminalId`: unique `QAX` code and a unique serial (the serial is unique in the whole system). */
+  static createDevicePayload(terminalId: number): CreateDevicePayload {
+    return {
+      TerminalId: terminalId,
+      Code: `QAX-DEV-${faker.string.alphanumeric({ length: 8, casing: 'upper' })}`,
+      DeviceName: 'QAX Device',
+      SerialNumber: `QAXSN${faker.string.alphanumeric({ length: 10, casing: 'upper' })}`,
+    };
+  }
+
+  /** Terminal names the case says must be refused (TER-004): empty, whitespace only and 101 characters. The 100-character boundary is accepted. */
+  static createInvalidTerminalNames(): InputRow[] {
+    return [
+      { label: 'empty', value: '' },
+      { label: 'whitespace only', value: '   ' },
+      { label: '101 characters', value: this.createTerminalNameOfLength(101) },
+    ];
+  }
+
+  /**
+   * MACs that are NOT six hex pairs with a single kind of separator (TER-006, strict format of the case):
+   * short, long, non-hex letters, no separators, spaces, mixed separators and the CSV example `ZZ:22`.
+   * The empty MAC is its own row because its message is "required".
+   */
+  static createMalformedMacs(): InputRow[] {
+    return [
+      { label: 'short (3 pairs)', value: 'AA:BB:CC' },
+      { label: 'long (7 pairs)', value: 'AA:BB:CC:DD:EE:FF:00' },
+      { label: 'non-hex letters', value: 'ZZ:ZZ:ZZ:ZZ:ZZ:ZZ' },
+      { label: 'no separators', value: 'AABBCCDDEEFF' },
+      { label: 'with spaces', value: 'AA BB CC DD EE FF' },
+      { label: 'mixed separators', value: 'AA:BB-CC:DD-EE:FF' },
+      { label: 'two characters (ZZ:22)', value: 'ZZ:22' },
+    ];
+  }
+
+  /** IPs the backend must refuse (TER-008). */
+  static createInvalidIps(): InputRow[] {
+    return [
+      { label: 'octet over 255', value: '256.1.1.1' },
+      { label: 'three octets', value: '1.2.3' },
+      { label: 'text', value: 'not-an-ip' },
+    ];
+  }
+
+  /** Host names with spaces or symbols (TER-009). */
+  static createInvalidHostNames(): InputRow[] {
+    return [
+      { label: 'space', value: 'qax host' },
+      { label: 'underscore', value: 'qax_host' },
+      { label: 'symbol', value: 'qax!host' },
+    ];
+  }
+
+  /** IMEIs that are not exactly 15 digits (TER-011). */
+  static createInvalidImeis(): InputRow[] {
+    return [
+      { label: '14 digits', value: '12345678901234' },
+      { label: '16 digits', value: '1234567890123456' },
+      { label: 'letters', value: '12345678901234A' },
+    ];
+  }
+
+  /**
+   * CSV text for the terminal `import-csv`: header `TerminalName,CodSede,HostName,UserMac,UserIP,IMEI,DpMovil/Fijo`
+   * (`CsvTerminalRowDto`) and one row per entry (no quoting needed for generated data).
+   */
+  static createTerminalCsv(rows: { name: string, branchCode: string, host?: string, mac: string, ip?: string, imei?: string, type?: string }[], header = 'TerminalName,CodSede,HostName,UserMac,UserIP,IMEI,DpMovil/Fijo'): string {
+    return [header, ...rows.map(row => [row.name, row.branchCode, row.host ?? '', row.mac, row.ip ?? '', row.imei ?? '', row.type ?? 'FIJO'].join(','))].join('\n');
+  }
+
+  // ============================================
+  // DEVICES (DIS cases)
+  // ============================================
+
+  /** Device code of EXACTLY `length` characters (letters, digits, `-`, `_`), `QAX-` first. */
+  static createDeviceCodeOfLength(length: number): string {
+    return `QAX-${faker.string.alphanumeric({ length: Math.max(length - 4, 0), casing: 'upper' })}`.slice(0, Math.max(length, 4));
+  }
+
+  /** Serial number of EXACTLY `length` characters, `QAXSN` first (the serial is unique in the whole system). */
+  static createSerialOfLength(length: number): string {
+    return `QAXSN${faker.string.alphanumeric({ length: Math.max(length - 5, 0), casing: 'upper' })}`.slice(0, Math.max(length, 5));
+  }
+
+  /** Device name of EXACTLY `length` characters, `QAX` first. */
+  static createDeviceNameOfLength(length: number): string {
+    return `QAX${faker.string.alpha({ length: Math.max(length - 3, 0), casing: 'lower' })}`.slice(0, Math.max(length, 3));
+  }
+
+  /** Device codes the backend must refuse (DIS-004): empty, 51 characters and the symbols the case lists. The 50-character boundary is accepted. */
+  static createInvalidDeviceCodes(): InputRow[] {
+    return [
+      { label: 'empty', value: '' },
+      { label: '51 characters', value: this.createDeviceCodeOfLength(51) },
+      { label: 'with a space', value: 'QAX DEV 1' },
+      { label: 'with @', value: 'QAX-DEV@1' },
+      { label: 'with a dot', value: 'QAX-DEV.1' },
+      { label: 'with a slash', value: 'QAX-DEV/1' },
+      { label: 'with n tilde', value: 'QAX-DEV-ni\u00F1o' },
+    ];
+  }
+
+  /**
+   * CSV text for the device `import-csv`: header `DeviceCode,Serial,DeviceName,TerminalName` (`CsvDeviceRowDto`)
+   * and one row per entry (no quoting needed for generated data).
+   */
+  static createDeviceCsv(rows: { code: string, serial: string, name?: string, terminalName: string }[], header = 'DeviceCode,Serial,DeviceName,TerminalName'): string {
+    return [header, ...rows.map(row => [row.code, row.serial, row.name ?? '', row.terminalName].join(','))].join('\n');
+  }
+
+  // ============================================
+  // USERAPPS (UAP cases)
+  // ============================================
+
+  /** Username (lower case, valid characters) of EXACTLY `length` characters, `qa.ua.` first. The username is global. */
+  static createUsernameOfLength(length: number): string {
+    return `qa.ua.${faker.string.alphanumeric({ length: Math.max(length - 6, 0), casing: 'lower' })}`.slice(0, Math.max(length, 6));
+  }
+
+  /** Usernames that use each symbol the backend allows (`@ # / \\ . - _`), one per row, all valid and unique (UAP-002). */
+  static createSymbolUsernames(): InputRow[] {
+    const id = () => faker.string.alphanumeric({ length: 8, casing: 'lower' });
+    return [
+      { label: 'at sign', value: `qa.${id()}@example.com` },
+      { label: 'hash', value: `qa#${id()}` },
+      { label: 'slash', value: `qa/${id()}` },
+      { label: 'backslash', value: `qa\\${id()}` },
+      { label: 'dot, hyphen and underscore', value: `qa.${id()}-x_y` },
+    ];
+  }
+
+  /** Usernames with characters the backend must refuse (UAP-003). */
+  static createInvalidUsernames(): InputRow[] {
+    const id = faker.string.alphanumeric({ length: 8, casing: 'lower' });
+    return [
+      { label: 'space', value: `qa ua ${id}` },
+      { label: 'accent', value: `qa.ua.ni\u00F1o${id}` },
+      { label: 'semicolon', value: `qa;${id}` },
+      { label: 'dollar sign', value: `qa$${id}` },
+    ];
+  }
+
+  /** E-mails the backend must refuse (UAP-007): no at sign, no domain dot, a space and 256 characters. */
+  static createInvalidEmails(): InputRow[] {
+    return [
+      { label: 'no at sign', value: 'sin-arroba.example.com' },
+      { label: 'no domain dot', value: 'qa@sindominio' },
+      { label: 'with a space', value: 'qa user@example.com' },
+      { label: '256 characters', value: `${'a'.repeat(244)}@example.com` },
+    ];
+  }
+
+  /**
+   * CSV text for the UserApp `import-csv`: header `CodUser,Email,NombreUser,Cargo` and one row per entry
+   * (no quoting needed for generated data). The backend lower-cases the username and generates the password.
+   */
+  static createUserAppCsv(rows: { user: string, email?: string, name?: string, position?: string }[], header = 'CodUser,Email,NombreUser,Cargo'): string {
+    return [header, ...rows.map(row => [row.user, row.email ?? '', row.name ?? '', row.position ?? ''].join(','))].join('\n');
+  }
+
+  // ============================================
+  // PLATFORM ADMINS AND ROLES (USR cases)
+  // ============================================
+
+  /** Personal e-mail domains the Admin username must refuse (USR-003): one unique address per blocked provider. */
+  static createPersonalEmails(): InputRow[] {
+    const id = () => faker.string.alphanumeric({ length: 8, casing: 'lower' });
+    return ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'].map(domain => ({ label: domain, value: `qa.adm.${id()}@${domain}` }));
+  }
+
+  /** Role name of EXACTLY `length` characters, `QAX` first (roles are global). */
+  static createRoleNameOfLength(length: number): string {
+    return `QAX${faker.string.alpha({ length: Math.max(length - 3, 0), casing: 'lower' })}`.slice(0, Math.max(length, 3));
   }
 }
 

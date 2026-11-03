@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generatedAt": "2026-10-29T13:50:50.713Z",
+  "generatedAt": "2026-11-03T17:18:38.951Z",
   "components": {
     "api": [
       {
@@ -43,6 +43,73 @@
         ]
       },
       {
+        "name": "BranchesApi",
+        "file": "BranchesApi.ts",
+        "relativePath": "tests/components/api/BranchesApi.ts",
+        "atcs": [
+          {
+            "id": "SUC-001",
+            "method": "listBranchesWithSearchAndPaging",
+            "line": 341
+          },
+          {
+            "id": "SUC-002",
+            "method": "createBranchWithValidCodeAndName",
+            "line": 410
+          },
+          {
+            "id": "SUC-003",
+            "method": "rejectInvalidBranchCodes",
+            "line": 226
+          },
+          {
+            "id": "SUC-004",
+            "method": "rejectInvalidBranchNames",
+            "line": 247
+          },
+          {
+            "id": "SUC-005",
+            "method": "rejectOversizedAddressAndDepartment",
+            "line": 270
+          },
+          {
+            "id": "SUC-006",
+            "method": "rejectDuplicateBranchCode",
+            "line": 444
+          },
+          {
+            "id": "SUC-007",
+            "method": "allowSameCodeInDifferentTenants",
+            "line": 479
+          },
+          {
+            "id": "SUC-008",
+            "method": "editNameAddressAndDepartment",
+            "line": 519
+          },
+          {
+            "id": "SUC-009",
+            "method": "refuseDeactivatingBranchWithActiveTerminals",
+            "line": 565
+          },
+          {
+            "id": "SUC-010",
+            "method": "deleteBranchSoftlyWithoutOrphans",
+            "line": 609
+          },
+          {
+            "id": "SUC-011",
+            "method": "importBranchesFromCsv",
+            "line": 653
+          },
+          {
+            "id": "SUC-012",
+            "method": "refuseBranchAccessToOtherTenantAdmin",
+            "line": 744
+          }
+        ]
+      },
+      {
         "name": "DataSecurityApi",
         "file": "DataSecurityApi.ts",
         "relativePath": "tests/components/api/DataSecurityApi.ts",
@@ -56,6 +123,63 @@
             "id": "SEC-011",
             "method": "recordActorAndDateOnCriticalChanges",
             "line": 298
+          }
+        ]
+      },
+      {
+        "name": "DevicesApi",
+        "file": "DevicesApi.ts",
+        "relativePath": "tests/components/api/DevicesApi.ts",
+        "atcs": [
+          {
+            "id": "DIS-001",
+            "method": "listDevicesWithTerminalAndBranch",
+            "line": 418
+          },
+          {
+            "id": "DIS-002",
+            "method": "createDeviceWithTerminalCodeAndSerial",
+            "line": 473
+          },
+          {
+            "id": "DIS-003",
+            "method": "rejectMissingTerminal",
+            "line": 298
+          },
+          {
+            "id": "DIS-004",
+            "method": "rejectInvalidDeviceCodes",
+            "line": 320
+          },
+          {
+            "id": "DIS-005",
+            "method": "rejectDuplicateDeviceCode",
+            "line": 333
+          },
+          {
+            "id": "DIS-006",
+            "method": "rejectInvalidSerials",
+            "line": 345
+          },
+          {
+            "id": "DIS-007",
+            "method": "enforceUniqueSerialAndOneDevicePerTerminal",
+            "line": 360
+          },
+          {
+            "id": "DIS-008",
+            "method": "rejectOversizedDeviceName",
+            "line": 399
+          },
+          {
+            "id": "DIS-009",
+            "method": "editDeactivateAndDeleteDevice",
+            "line": 511
+          },
+          {
+            "id": "DIS-010",
+            "method": "importDevicesFromCsv",
+            "line": 584
           }
         ]
       },
@@ -114,6 +238,18 @@
             "id": "OPE-011",
             "method": "refuseOperatorsToNonAdminRoles",
             "line": 658
+          }
+        ]
+      },
+      {
+        "name": "RolesApi",
+        "file": "RolesApi.ts",
+        "relativePath": "tests/components/api/RolesApi.ts",
+        "atcs": [
+          {
+            "id": "USR-012",
+            "method": "createAndEditRole",
+            "line": 61
           }
         ]
       },
@@ -209,6 +345,93 @@
         "atcs": []
       },
       {
+        "name": "TerminalsApi",
+        "file": "TerminalsApi.ts",
+        "relativePath": "tests/components/api/TerminalsApi.ts",
+        "atcs": [
+          {
+            "id": "TER-001",
+            "method": "listTerminalsWithBranchAndDevicesCount",
+            "line": 505
+          },
+          {
+            "id": "TER-002",
+            "method": "createTerminalWithBranchNameMacAndType",
+            "line": 572
+          },
+          {
+            "id": "TER-003",
+            "method": "rejectMissingBranch",
+            "line": 262
+          },
+          {
+            "id": "TER-004",
+            "method": "rejectInvalidTerminalNames",
+            "line": 278
+          },
+          {
+            "id": "TER-005",
+            "method": "acceptColonAndHyphenMacs",
+            "line": 294
+          },
+          {
+            "id": "TER-006",
+            "method": "rejectMalformedMacs",
+            "line": 325
+          },
+          {
+            "id": "TER-007",
+            "method": "rejectDuplicateMac",
+            "line": 343
+          },
+          {
+            "id": "TER-008",
+            "method": "validateIpAddresses",
+            "line": 374
+          },
+          {
+            "id": "TER-009",
+            "method": "rejectInvalidHostNames",
+            "line": 390
+          },
+          {
+            "id": "TER-010",
+            "method": "restrictDeviceTypeToMovilAndFijo",
+            "line": 405
+          },
+          {
+            "id": "TER-011",
+            "method": "requireFifteenDigitImei",
+            "line": 417
+          },
+          {
+            "id": "TER-012",
+            "method": "requireImeiForMovil",
+            "line": 436
+          },
+          {
+            "id": "TER-013",
+            "method": "editTerminalAndChangeBranch",
+            "line": 606
+          },
+          {
+            "id": "TER-014",
+            "method": "refuseDeactivatingTerminalWithActiveDevice",
+            "line": 658
+          },
+          {
+            "id": "TER-015",
+            "method": "deleteTerminalSoftly",
+            "line": 698
+          },
+          {
+            "id": "TER-016",
+            "method": "importTerminalsFromCsv",
+            "line": 762
+          }
+        ]
+      },
+      {
         "name": "TransportSecurityApi",
         "file": "TransportSecurityApi.ts",
         "relativePath": "tests/components/api/TransportSecurityApi.ts",
@@ -248,7 +471,67 @@
           {
             "id": "AUT-011",
             "method": "unlockLockedUserApp",
-            "line": 163
+            "line": 201
+          },
+          {
+            "id": "UAP-001",
+            "method": "createUserAppWithUsernamePasswordAndOptionals",
+            "line": 556
+          },
+          {
+            "id": "UAP-002",
+            "method": "acceptUsernameSymbols",
+            "line": 442
+          },
+          {
+            "id": "UAP-003",
+            "method": "rejectUsernameInvalidCharacters",
+            "line": 454
+          },
+          {
+            "id": "UAP-004",
+            "method": "rejectInvalidUsernameLengths",
+            "line": 470
+          },
+          {
+            "id": "UAP-005",
+            "method": "enforceGlobalUsernameUniqueness",
+            "line": 484
+          },
+          {
+            "id": "UAP-006",
+            "method": "rejectWeakPasswords",
+            "line": 502
+          },
+          {
+            "id": "UAP-007",
+            "method": "validateEmails",
+            "line": 514
+          },
+          {
+            "id": "UAP-008",
+            "method": "rejectOversizedNameAndPosition",
+            "line": 536
+          },
+          {
+            "id": "UAP-009",
+            "method": "keepPasswordWhenEditedWithoutPassword",
+            "line": 593
+          },
+          {
+            "id": "UAP-010",
+            "method": "refuseSignInOfDeactivatedUserApp",
+            "line": 627
+          },
+          {
+            "id": "UAP-011",
+            "method": "showLockoutAndUnlock",
+            "line": 678
+          },
+          {
+            "id": "UAP-012",
+            "method": "importUserAppsFromCsv",
+            "line": 732
           }
         ]
       },
@@ -256,7 +539,58 @@
         "name": "UsersApi",
         "file": "UsersApi.ts",
         "relativePath": "tests/components/api/UsersApi.ts",
-        "atcs": []
+        "atcs": [
+          {
+            "id": "USR-001",
+            "method": "listAdminsWithSearchAndState",
+            "line": 389
+          },
+          {
+            "id": "USR-002",
+            "method": "createAdminWithCorporateEmail",
+            "line": 442
+          },
+          {
+            "id": "USR-003",
+            "method": "rejectPersonalEmailDomains",
+            "line": 304
+          },
+          {
+            "id": "USR-004",
+            "method": "rejectInvalidAndDuplicateEmails",
+            "line": 319
+          },
+          {
+            "id": "USR-005",
+            "method": "rejectInvalidNameLengths",
+            "line": 339
+          },
+          {
+            "id": "USR-006",
+            "method": "rejectWeakPasswords",
+            "line": 355
+          },
+          {
+            "id": "USR-007",
+            "method": "editAdminAndChangePassword",
+            "line": 474
+          },
+          {
+            "id": "USR-008",
+            "method": "refuseSignInOfInactiveAndDeletedAdmin",
+            "line": 517
+          },
+          {
+            "id": "USR-009",
+            "method": "showAdminLockoutAndUnlock",
+            "line": 572
+          },
+          {
+            "id": "USR-011",
+            "method": "refuseSelfDeactivationAndDeletion",
+            "line": 623
+          }
+        ]
       }
     ],
     "ui": [
@@ -513,6 +847,27 @@
   },
   "steps": [
     {
+      "name": "BranchDataSteps",
+      "file": "BranchDataSteps.ts",
+      "relativePath": "tests/components/steps/BranchDataSteps.ts",
+      "methods": [
+        "cleanup",
+        "deactivateDevice",
+        "deactivateTerminal",
+        "deleteBranch",
+        "prepareBranch",
+        "prepareDevice",
+        "prepareInactiveBranch",
+        "prepareInactiveTerminal",
+        "prepareNamedTerminal",
+        "prepareTenant",
+        "prepareTerminal",
+        "readBranch",
+        "readDevice",
+        "readTerminal"
+      ]
+    },
+    {
       "name": "GeneratedPrincipalsSteps",
       "file": "GeneratedPrincipalsSteps.ts",
       "relativePath": "tests/components/steps/GeneratedPrincipalsSteps.ts",
@@ -577,10 +932,10 @@
     }
   ],
   "summary": {
-    "totalComponents": 19,
-    "totalATCs": 75,
-    "apiComponents": 12,
+    "totalComponents": 23,
+    "totalATCs": 136,
+    "apiComponents": 16,
     "uiComponents": 7,
-    "stepsModules": 5
+    "stepsModules": 6
   }
 }
