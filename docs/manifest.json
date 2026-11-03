@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T00:49:14.195Z",
+  "generatedAt": "2026-11-03T23:29:33.603Z",
   "children": [
     {
       "type": "folder",
@@ -195,6 +195,34 @@
           "title": "Personalidad de la IA",
           "description": "Cómo habla y cómo razona el agente en este repo: Butler, PM Voice, Visual Mapping, cómo te pide decidir, el idioma y cómo cambiar cada comportamiento.",
           "order": 60
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "path": "qa-reports",
+      "title": "Reportes de QA",
+      "description": "Reportes de QA: Allure y Playwright de la automatización de pruebas.",
+      "order": 1000,
+      "index": "qa-reports/index.html",
+      "children": [
+        {
+          "type": "folder",
+          "path": "qa-reports/playwright",
+          "title": "Playwright Test Report",
+          "description": "",
+          "order": 1000,
+          "index": "qa-reports/playwright/index.html",
+          "children": []
+        },
+        {
+          "type": "folder",
+          "path": "qa-reports/allure",
+          "title": "Validate QA",
+          "description": "",
+          "order": 1000,
+          "index": "qa-reports/allure/index.html",
+          "children": []
         }
       ]
     }
