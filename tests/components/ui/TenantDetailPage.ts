@@ -42,7 +42,7 @@ export class TenantDetailPage extends UiBase {
     await this.page.getByRole('button', { name: 'Nuevo usuario' }).click();
     await this.page.locator('input[formcontrolname="fullName"]').fill(args.user.fullName);
     await this.page.locator('input[formcontrolname="username"]').fill(args.user.username);
-    await this.page.locator('input[formcontrolname="password"]').fill(args.user.password);
+    await this.fillSecret(this.page.locator('input[formcontrolname="password"]'), args.user.password);
     await this.page.getByRole('button', { name: 'Crear usuario' }).click();
     await expect(this.page.getByRole('button', { name: 'Crear usuario' })).toBeHidden({ timeout: 15000 });
 

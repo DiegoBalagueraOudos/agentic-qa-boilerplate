@@ -93,8 +93,8 @@ export class LogsPage extends UiBase {
     await this.page.getByPlaceholder('Buscar...').fill(args.tenant.rnec);
     await this.page.getByRole('button').filter({ hasText: args.tenant.name }).filter({ hasText: args.tenant.rnec }).click();
 
-    await this.page.locator('input[type="date"]').first().fill(dateAway(-40));
-    await this.page.locator('input[type="date"]').nth(1).fill(dateAway(-1));
+    await this.fillSecret(this.page.locator('input[type="date"]').first(), dateAway(-40));
+    await this.fillSecret(this.page.locator('input[type="date"]').nth(1), dateAway(-1));
     await this.page.getByRole('button', { name: 'Ver datos' }).click();
     await expect(this.page.getByText(`${args.rows.length} registros en total`)).toBeVisible();
 
