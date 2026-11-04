@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T23:29:33.603Z",
+  "generatedAt": "2026-11-04T22:23:38.072Z",
   "children": [
     {
       "type": "folder",
@@ -201,10 +201,10 @@
     {
       "type": "folder",
       "path": "qa-reports",
-      "title": "Reportes de QA",
-      "description": "Reportes de QA: Allure y Playwright de la automatización de pruebas.",
+      "title": "Qa Reports",
+      "description": "",
       "order": 1000,
-      "index": "qa-reports/index.html",
+      "index": null,
       "children": [
         {
           "type": "folder",
