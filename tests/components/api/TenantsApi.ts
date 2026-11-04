@@ -64,4 +64,9 @@ export class TenantsApi extends SecureApi {
 
     return [response, body];
   }
+
+  /** Delete a tenant; asserts nothing (cleanup tolerates a tenant that is already deleted). */
+  async attemptDeleteTenant(tenantId: number): Promise<[APIResponse, ApiEnvelope<unknown>]> {
+    return this.secureDELETE<unknown>(`/Tenant/${tenantId}`);
+  }
 }

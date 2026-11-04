@@ -615,6 +615,65 @@ export class UsersApi extends SecureApi {
     }
   }
 
+  /** Set the GLOBAL Admin lockout threshold; asserts nothing. Used by CFG-008, which always puts the original back. */
+  private async attemptSetLockoutThreshold(value: number): Promise<[APIResponse, ApiEnvelope<LockoutConfigData>]> {
+    return this.securePUTPlain<LockoutConfigData, { MaxFailedLoginAttempts: number }>('/SecurityConfig/lockout', { MaxFailedLoginAttempts: value });
+  }
+
+  /**
+   * CFG-008: a new threshold applies to the failed logins of a platform Admin. The original threshold is read; a smaller one (2, or 3
+   * when it already was 2) is set; a GENERATED Admin gets that many wrong passwords: every attempt before the last answers 401
+   * `INVALID_CREDENTIALS` and the last 401 `ACCOUNT_LOCKED`; the root read shows `IsLockedOut` true and the correct password is refused.
+   * The original threshold is put back in any case (and read back); wrong passwords never reach a real account.
+   */
+  @atc('CFG-008')
+  async applyNewLockoutThresholdToAdminLogins(): Promise<void> {
+    const sent = this.data.createAdminPayload();
+    const correct: LoginPayload = { UserName: sent.UserName, Password: sent.Password };
+    const wrong: LoginPayload = { UserName: sent.UserName, Password: this.data.createWrongPassword() };
+    let lastFailureAt: number | undefined;
+    try {
+      await this.runAdminCase({
+        what: 'new lockout threshold',
+        body: async (ids, failures) => {
+          const [, current] = await this.getAdminLockoutThreshold();
+          const original = current.Data?.MaxFailedLoginAttempts ?? 3;
+          const target = original === 2 ? 3 : 2;
+          try {
+            const [setResponse, set] = await this.attemptSetLockoutThreshold(target);
+            verify(failures, setResponse.status() === 200 && set.Ok === true, `set the threshold to ${target}: HTTP ${setResponse.status()} ${set.CodeError ?? 'no error code'} (expected 200)`);
+            if (setResponse.status() !== 200) {
+              return;
+            }
+            const [response, body] = await this.createTrackedAdmin(sent, ids);
+            verify(failures, response.status() === 200 && ids.length === 1, `create: HTTP ${response.status()} ${body.CodeError ?? 'no error code'}`);
+            if (ids.length !== 1) {
+              return;
+            }
+            for (let attempt = 1; attempt <= target; attempt++) {
+              const refused = await this.adminSignIn(wrong);
+              lastFailureAt = Date.now();
+              const expectedCode = attempt === target ? 'ACCOUNT_LOCKED' : 'INVALID_CREDENTIALS';
+              verify(failures, refused.status === 401 && refused.code === expectedCode, `wrong password ${attempt} of ${target}: HTTP ${refused.status} ${refused.code ?? 'no error code'} (expected 401 ${expectedCode})`);
+            }
+            const [lockedResponse, locked] = await this.getAdmin(ids[0]);
+            verify(failures, lockedResponse.status() === 200 && locked.Data?.IsLockedOut === true, `after ${target} wrong passwords, IsLockedOut reads ${String(locked.Data?.IsLockedOut)} (expected true)`);
+            const stillLocked = await this.adminSignIn(correct);
+            verify(failures, stillLocked.status !== 200, `the correct password signed in (HTTP ${stillLocked.status}) although the account is locked`);
+          }
+          finally {
+            await this.attemptSetLockoutThreshold(original);
+            const [, after] = await this.getAdminLockoutThreshold();
+            verify(failures, after.Data?.MaxFailedLoginAttempts === original, `RESTORE FAILED: the threshold reads ${String(after.Data?.MaxFailedLoginAttempts)} (expected ${original})`);
+          }
+        },
+      });
+    }
+    finally {
+      await this.releaseLimiterWindow(lastFailureAt).catch(() => undefined);
+    }
+  }
+
   /**
    * USR-011: an Admin cannot deactivate or delete itself. A GENERATED Admin signs in (its own session) and tries
    * `PUT IsActive=false` and `DELETE` on its own id: both must be refused (4xx, `Ok` false) and the root read must show it still

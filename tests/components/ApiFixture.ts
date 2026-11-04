@@ -22,12 +22,18 @@ import { AccessApi } from '@api/AccessApi';
 import { ApiBase } from '@api/ApiBase';
 import { AuthApi } from '@api/AuthApi';
 import { BranchesApi } from '@api/BranchesApi';
+import { ConcurrencyApi } from '@api/ConcurrencyApi';
+import { DataIntegrityApi } from '@api/DataIntegrityApi';
 import { DataSecurityApi } from '@api/DataSecurityApi';
 import { DevicesApi } from '@api/DevicesApi';
+import { LogsApi } from '@api/LogsApi';
 import { OperatorsApi } from '@api/OperatorsApi';
+import { PlatformConfigApi } from '@api/PlatformConfigApi';
+import { ProductsApi } from '@api/ProductsApi';
 import { RolesApi } from '@api/RolesApi';
 import { SessionSecurityApi } from '@api/SessionSecurityApi';
 import { TenantAdminsApi } from '@api/TenantAdminsApi';
+import { TenantManagementApi } from '@api/TenantManagementApi';
 import { TenantsApi } from '@api/TenantsApi';
 import { TerminalsApi } from '@api/TerminalsApi';
 import { TransportSecurityApi } from '@api/TransportSecurityApi';
@@ -72,6 +78,24 @@ export class ApiFixture extends ApiBase {
   /** Branches component - the SUC cases (branch catalog, validation, CSV import) */
   readonly branches: BranchesApi;
 
+  /** Products component - the PRO cases (catalog, code and name validation, status, TenantAdmin access) */
+  readonly products: ProductsApi;
+
+  /** Platform configuration component - the CFG cases (contingency switch, global lockout threshold) */
+  readonly platformConfig: PlatformConfigApi;
+
+  /** Data integrity component - the DAT cases (soft delete, operator references, credential history, seeded data) */
+  readonly dataIntegrity: DataIntegrityApi;
+
+  /** Concurrency component - the CON cases (simultaneous creates of the same record) */
+  readonly concurrency: ConcurrencyApi;
+
+  /** Tenant management component - the TEN cases (create, edit, logo, status, delete) */
+  readonly tenantManagement: TenantManagementApi;
+
+  /** Logs component - log review views and their filters (LOG cases) */
+  readonly logs: LogsApi;
+
   /** Terminals component - minimal data helper for the SUC cases (no ATC) */
   readonly terminals: TerminalsApi;
 
@@ -96,6 +120,12 @@ export class ApiFixture extends ApiBase {
     this.dataSecurity = new DataSecurityApi(options);
     this.tenantAdmins = new TenantAdminsApi(options);
     this.branches = new BranchesApi(options);
+    this.products = new ProductsApi(options);
+    this.platformConfig = new PlatformConfigApi(options);
+    this.dataIntegrity = new DataIntegrityApi(options);
+    this.concurrency = new ConcurrencyApi(options);
+    this.tenantManagement = new TenantManagementApi(options);
+    this.logs = new LogsApi(options);
     this.terminals = new TerminalsApi(options);
     this.devices = new DevicesApi(options);
     this.roles = new RolesApi(options);
@@ -121,6 +151,12 @@ export class ApiFixture extends ApiBase {
     this.dataSecurity.setCryptoSession(state);
     this.tenantAdmins.setCryptoSession(state);
     this.branches.setCryptoSession(state);
+    this.products.setCryptoSession(state);
+    this.platformConfig.setCryptoSession(state);
+    this.dataIntegrity.setCryptoSession(state);
+    this.concurrency.setCryptoSession(state);
+    this.tenantManagement.setCryptoSession(state);
+    this.logs.setCryptoSession(state);
     this.terminals.setCryptoSession(state);
     this.devices.setCryptoSession(state);
     this.roles.setCryptoSession(state);
@@ -138,6 +174,12 @@ export class ApiFixture extends ApiBase {
     this.dataSecurity.clearCryptoSession();
     this.tenantAdmins.clearCryptoSession();
     this.branches.clearCryptoSession();
+    this.products.clearCryptoSession();
+    this.platformConfig.clearCryptoSession();
+    this.dataIntegrity.clearCryptoSession();
+    this.concurrency.clearCryptoSession();
+    this.tenantManagement.clearCryptoSession();
+    this.logs.clearCryptoSession();
     this.terminals.clearCryptoSession();
     this.devices.clearCryptoSession();
     this.roles.clearCryptoSession();
@@ -160,6 +202,12 @@ export class ApiFixture extends ApiBase {
     this.dataSecurity.setAuthToken(token);
     this.tenantAdmins.setAuthToken(token);
     this.branches.setAuthToken(token);
+    this.products.setAuthToken(token);
+    this.platformConfig.setAuthToken(token);
+    this.dataIntegrity.setAuthToken(token);
+    this.concurrency.setAuthToken(token);
+    this.tenantManagement.setAuthToken(token);
+    this.logs.setAuthToken(token);
     this.terminals.setAuthToken(token);
     this.devices.setAuthToken(token);
     this.roles.setAuthToken(token);
@@ -181,6 +229,12 @@ export class ApiFixture extends ApiBase {
     this.dataSecurity.clearAuthToken();
     this.tenantAdmins.clearAuthToken();
     this.branches.clearAuthToken();
+    this.products.clearAuthToken();
+    this.platformConfig.clearAuthToken();
+    this.dataIntegrity.clearAuthToken();
+    this.concurrency.clearAuthToken();
+    this.tenantManagement.clearAuthToken();
+    this.logs.clearAuthToken();
     this.terminals.clearAuthToken();
     this.devices.clearAuthToken();
     this.roles.clearAuthToken();

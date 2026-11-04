@@ -17,11 +17,14 @@
 import type { TestContextOptions } from '@TestContext';
 
 import { ActivationPage } from '@ui/ActivationPage';
+import { DashboardPage } from '@ui/DashboardPage';
 import { LoginPage } from '@ui/LoginPage';
+import { LogsPage } from '@ui/LogsPage';
 import { OperatorsPage } from '@ui/OperatorsPage';
 import { SessionPage } from '@ui/SessionPage';
 import { ShellPage } from '@ui/ShellPage';
 import { TenantAdminsPage } from '@ui/TenantAdminsPage';
+import { TenantDetailPage } from '@ui/TenantDetailPage';
 import { TenantsPage } from '@ui/TenantsPage';
 import { UiBase } from '@ui/UiBase';
 
@@ -51,6 +54,15 @@ export class UiFixture extends UiBase {
   /** Tenants page component - tenant list and creation form (OPE-013) */
   readonly tenants: TenantsPage;
 
+  /** Tenant detail page - resources tabs and CSV exports (UAP, TEN cases) */
+  readonly tenantDetail: TenantDetailPage;
+
+  /** Logs page - Administrator log review screen (LOG cases) */
+  readonly logs: LogsPage;
+
+  /** Dashboard page - Administrator statistic cards (DSH cases) */
+  readonly dashboard: DashboardPage;
+
   constructor(options: TestContextOptions) {
     super(options);
 
@@ -62,5 +74,8 @@ export class UiFixture extends UiBase {
     this.operators = new OperatorsPage(options);
     this.tenantAdmins = new TenantAdminsPage(options);
     this.tenants = new TenantsPage(options);
+    this.tenantDetail = new TenantDetailPage(options);
+    this.logs = new LogsPage(options);
+    this.dashboard = new DashboardPage(options);
   }
 }

@@ -19,12 +19,23 @@ import type { RawEnvelopeRequest, RawEnvelopeResult } from '@schemas/security.ty
 import type { TestContextOptions } from '@TestContext';
 import type { CryptoSessionState, EncryptedEnvelope } from '@utils/cryptoSession';
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { ApiBase } from '@api/ApiBase';
 import { expect, test } from '@playwright/test';
 import { decryptEnvelope, encryptEnvelope, isEnvelope, startHandshake } from '@utils/cryptoSession';
 
 /** Window of the per-IP failed-login limiter plus a margin, measured from the LAST attempt. */
 const LIMITER_WINDOW_MS = 31000;
+
+/**
+ * The backend's `sensitive` limiter (API credentials, tenant secret, revealed fields): a sliding window of 10 calls per minute per address, in 6
+ * segments of 10 s, so a call is certain to have left the window 70 s later. The suite keeps one call in reserve.
+ * The timestamps live in a small file (no secret): Playwright restarts the worker after a failed test and module state would be lost.
+ */
+const SENSITIVE_WINDOW_MS = 71000;
+const SENSITIVE_BUDGET = 9;
+const SENSITIVE_MARK_FILE = path.join(process.cwd(), 'reports', '.sensitive-calls');
 
 export class SecureApi extends ApiBase {
   /** Cookies that make up a signed-in session (asserted by NAME only, values are never read). */
@@ -184,6 +195,40 @@ export class SecureApi extends ApiBase {
   // ============================================
   // Failed-login limiter
   // ============================================
+
+  /** Timestamps of the sensitive calls still inside the limiter window (an unreadable file counts as none). */
+  private readSensitiveCalls(): number[] {
+    try {
+      const values = JSON.parse(fs.readFileSync(SENSITIVE_MARK_FILE, 'utf8')) as unknown;
+      const now = Date.now();
+      return Array.isArray(values) ? values.filter((at): at is number => typeof at === 'number' && at <= now && now - at < SENSITIVE_WINDOW_MS) : [];
+    }
+    catch {
+      return [];
+    }
+  }
+
+  private writeSensitiveCalls(calls: number[]): void {
+    fs.mkdirSync(path.dirname(SENSITIVE_MARK_FILE), { recursive: true });
+    const temp = `${SENSITIVE_MARK_FILE}.${process.pid}.tmp`;
+    fs.writeFileSync(temp, JSON.stringify(calls));
+    fs.renameSync(temp, SENSITIVE_MARK_FILE);
+  }
+
+  /**
+   * Wait for a free slot of the `sensitive` limiter and take it. Call it right BEFORE every request to a sensitive route; a request that
+   * goes through it never meets a 429 that is not on purpose. Condition-based on the recorded calls, never a fixed sleep.
+   */
+  protected async awaitSensitiveSlot(): Promise<void> {
+    await expect.poll(() => this.readSensitiveCalls().length < SENSITIVE_BUDGET, { timeout: SENSITIVE_WINDOW_MS + 5000, intervals: [1000] }).toBe(true);
+    this.writeSensitiveCalls([...this.readSensitiveCalls(), Date.now()]);
+  }
+
+  /** Record `count` sensitive calls that were sent on purpose without a slot (the limit case), so the next ones wait for the window. */
+  protected recordSensitiveCalls(count: number): void {
+    const now = Date.now();
+    this.writeSensitiveCalls([...this.readSensitiveCalls(), ...Array.from({ length: count }, () => now)]);
+  }
 
   /**
    * Wait until the per-IP failed-login limiter window (4 failures in 30 s) has cleared.
@@ -395,6 +440,37 @@ export class SecureApi extends ApiBase {
       });
       const body = await this.getResponseJsonObject<EncryptedEnvelope | ApiEnvelope<T>>(response);
       return [response, body] as const;
+    });
+  }
+
+  /**
+   * PUT with a PLAIN JSON body, for the routes the backend does not list among its encrypted paths
+   * (`/SecurityConfig`): an envelope there is read as an empty body. Same session and CSRF headers as DELETE.
+   */
+  protected async securePUTPlain<T, TPayload extends object>(
+    endpoint: string,
+    payload: TPayload,
+  ): Promise<[APIResponse, ApiEnvelope<T>]> {
+    return this.send<T>('PUT plain', async session =>
+      this.apiPUT<EncryptedEnvelope | ApiEnvelope<T>, TPayload>(
+        endpoint,
+        payload,
+        { headers: await this.mutationHeaders(session) },
+      ));
+  }
+
+  /** PATCH with an encrypted body (for example a status change): same envelope rules as securePUT. */
+  protected async securePATCHWithBody<T, TPayload extends object>(
+    endpoint: string,
+    payload: TPayload,
+  ): Promise<[APIResponse, ApiEnvelope<T>]> {
+    return this.send<T>('PATCH', async (session) => {
+      const envelope = encryptEnvelope(Buffer.from(session.aesKey, 'base64'), payload);
+      return this.apiPATCH<EncryptedEnvelope | ApiEnvelope<T>, EncryptedEnvelope>(
+        endpoint,
+        envelope,
+        { headers: await this.envelopeHeaders(session) },
+      );
     });
   }
 

@@ -192,3 +192,88 @@ export interface RoleData {
   UpdatedAt?: string | null
   UpdatedBy?: string | null
 }
+
+/** Tenant as `GET /Tenant/{id}` and the tenant list answer it (the fields the TEN cases read). Every numeric parameter is null until it is set. */
+export interface TenantFullData {
+  Id: number
+  Rnec: string
+  BusinessName: string
+  Logo?: string | null
+  IsActive: boolean
+  IsDeleted: boolean
+  DeletedAt?: string | null
+  DeletedBy?: string | null
+  CreatedBy: string
+  UpdatedBy?: string | null
+  HasApiCredentials: boolean
+  TenantSecretMasked?: string | null
+  TenantSecretIsActive?: boolean
+  TenantSecretRegeneratedAt?: string | null
+  LogDbConfigured: boolean
+  LogDbPort?: number | null
+  MainOperatorId?: number | null
+  ContingencyOperatorId?: number | null
+  ValidateMacSerial: boolean
+  MaxFailedLoginAttempts?: number | null
+  MaxInactivityMinutes?: number | null
+  ConsecutiveAttemptsLimit?: number | null
+  ConsecutiveAttemptsSeconds?: number | null
+  RetryLockMinutes?: number | null
+  FailedAttemptsLimit?: number | null
+  FailedAttemptsMinutes?: number | null
+  FailedLockMinutes?: number | null
+  SuccessAttemptsLimit?: number | null
+  SuccessAttemptsMinutes?: number | null
+  SuccessLockMinutes?: number | null
+  BlockedFingersLimit?: number | null
+  BlockedFingersMinutes?: number | null
+  HitTwoFingers: boolean
+  RequireLocation: boolean
+  ManualFingerSelection: boolean
+}
+
+/** The platform contingency switch as `GET/PUT /contingency` answer. There is one record; `IsActive` is the switch. */
+export interface ContingencyData {
+  Id: number
+  IsActive: boolean
+  CreatedAt: string
+  CreatedBy: string
+  UpdatedAt?: string | null
+  UpdatedBy?: string | null
+}
+
+/** Product statuses the backend accepts in `PATCH .../status` (case sensitive). */
+export type ProductStatus = 'Active' | 'Inactive' | 'Disabled';
+
+/** Product as the backend returns it. `Status` is derived: `Disabled` wins over `Active`/`Inactive`. */
+export interface ProductData {
+  IdProduct: number
+  TenantId: number
+  ProductName: string
+  ProductCode: string
+  IsActive: boolean
+  IsDisabled: boolean
+  Status: string
+  CreatedAt: string
+  CreatedBy: string
+  UpdatedAt?: string | null
+  UpdatedBy?: string | null
+  TenantName?: string | null
+}
+
+/** `POST /tenant/{tenantId}/Product`: the tenant comes from the route, the creator from the session. */
+export interface CreateProductPayload {
+  ProductName: string
+  ProductCode: string
+}
+
+/** `PUT /tenant/{tenantId}/Product/{id}`: both fields optional. The code is not part of the contract (it never changes). */
+export interface UpdateProductPayload {
+  ProductName?: string
+  IsActive?: boolean
+}
+
+/** `PATCH /tenant/{tenantId}/Product/{id}/status`. */
+export interface ChangeProductStatusPayload {
+  NewStatus: string
+}

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generatedAt": "2026-11-03T17:18:38.951Z",
+  "generatedAt": "2026-11-04T22:15:05.062Z",
   "components": {
     "api": [
       {
@@ -110,6 +110,50 @@
         ]
       },
       {
+        "name": "ConcurrencyApi",
+        "file": "ConcurrencyApi.ts",
+        "relativePath": "tests/components/api/ConcurrencyApi.ts",
+        "atcs": [
+          {
+            "id": "CON-002",
+            "method": "createOnlyOneOperatorFromSimultaneousRequests",
+            "line": 194
+          },
+          {
+            "id": "CON-003",
+            "method": "keepOneRecordOnDoubleSubmit",
+            "line": 206
+          }
+        ]
+      },
+      {
+        "name": "DataIntegrityApi",
+        "file": "DataIntegrityApi.ts",
+        "relativePath": "tests/components/api/DataIntegrityApi.ts",
+        "atcs": [
+          {
+            "id": "DAT-001",
+            "method": "keepSoftDeletedTenantsAndAdministrators",
+            "line": 170
+          },
+          {
+            "id": "DAT-002",
+            "method": "refuseOperatorReferencesThatDoNotExist",
+            "line": 232
+          },
+          {
+            "id": "DAT-004",
+            "method": "recordApiPasswordAndSecretHistory",
+            "line": 269
+          },
+          {
+            "id": "DAT-005",
+            "method": "haveSeededRootUserAndRoles",
+            "line": 308
+          }
+        ]
+      },
+      {
         "name": "DataSecurityApi",
         "file": "DataSecurityApi.ts",
         "relativePath": "tests/components/api/DataSecurityApi.ts",
@@ -184,6 +228,103 @@
         ]
       },
       {
+        "name": "LogsApi",
+        "file": "LogsApi.ts",
+        "relativePath": "tests/components/api/LogsApi.ts",
+        "atcs": [
+          {
+            "id": "LOG-001",
+            "method": "listLogsOfClient",
+            "line": 589
+          },
+          {
+            "id": "LOG-003",
+            "method": "isolateLogsPerTenant",
+            "line": 356
+          },
+          {
+            "id": "LOG-004",
+            "method": "filterLogsByDateRange",
+            "line": 607
+          },
+          {
+            "id": "LOG-005",
+            "method": "rejectInvertedAndFutureDates",
+            "line": 198
+          },
+          {
+            "id": "LOG-006",
+            "method": "limitDateRangeTo730Days",
+            "line": 220
+          },
+          {
+            "id": "LOG-007",
+            "method": "defineBehaviourWithoutDates",
+            "line": 240
+          },
+          {
+            "id": "LOG-008",
+            "method": "combineLogFilters",
+            "line": 633
+          },
+          {
+            "id": "LOG-009",
+            "method": "resistFilterInjection",
+            "line": 263
+          },
+          {
+            "id": "LOG-010",
+            "method": "pageLogsConsistently",
+            "line": 660
+          },
+          {
+            "id": "LOG-011",
+            "method": "answerEmptyResult",
+            "line": 295
+          },
+          {
+            "id": "LOG-012",
+            "method": "readLogsOfTenantWithoutLogDatabase",
+            "line": 322
+          },
+          {
+            "id": "LOG-013",
+            "method": "keepApplicationStableWithLogDatabaseDown",
+            "line": 543
+          },
+          {
+            "id": "LOG-014",
+            "method": "readLogsWithNullFields",
+            "line": 686
+          },
+          {
+            "id": "LOG-015",
+            "method": "showStoredLogValues",
+            "line": 710
+          },
+          {
+            "id": "LOG-017",
+            "method": "exposeOnlyNeededLogData",
+            "line": 752
+          },
+          {
+            "id": "LOG-019",
+            "method": "listDevicesWithoutAssociation",
+            "line": 423
+          },
+          {
+            "id": "LOG-020",
+            "method": "requestAtdpExport",
+            "line": 480
+          },
+          {
+            "id": "UAP-013",
+            "method": "readOnlyOwnTenantLogsAsUserApp",
+            "line": 783
+          }
+        ]
+      },
+      {
         "name": "MailboxApi",
         "file": "MailboxApi.ts",
         "relativePath": "tests/components/api/MailboxApi.ts",
@@ -238,6 +379,100 @@
             "id": "OPE-011",
             "method": "refuseOperatorsToNonAdminRoles",
             "line": 658
+          }
+        ]
+      },
+      {
+        "name": "PlatformConfigApi",
+        "file": "PlatformConfigApi.ts",
+        "relativePath": "tests/components/api/PlatformConfigApi.ts",
+        "atcs": [
+          {
+            "id": "CFG-001",
+            "method": "readContingencyState",
+            "line": 137
+          },
+          {
+            "id": "CFG-002",
+            "method": "switchContingencyAndKeepItPersisted",
+            "line": 156
+          },
+          {
+            "id": "CFG-004",
+            "method": "refuseContingencyToTenantAdmin",
+            "line": 197
+          },
+          {
+            "id": "CFG-005",
+            "method": "readLockoutThreshold",
+            "line": 217
+          },
+          {
+            "id": "CFG-006",
+            "method": "updateLockoutThreshold",
+            "line": 233
+          },
+          {
+            "id": "CFG-007",
+            "method": "rejectInvalidLockoutThresholds",
+            "line": 252
+          }
+        ]
+      },
+      {
+        "name": "ProductsApi",
+        "file": "ProductsApi.ts",
+        "relativePath": "tests/components/api/ProductsApi.ts",
+        "atcs": [
+          {
+            "id": "PRO-001",
+            "method": "listProductsWithSearchAndPaging",
+            "line": 236
+          },
+          {
+            "id": "PRO-002",
+            "method": "createProductWithNameAndCode",
+            "line": 292
+          },
+          {
+            "id": "PRO-003",
+            "method": "rejectProductCodesOfWrongLength",
+            "line": 317
+          },
+          {
+            "id": "PRO-004",
+            "method": "rejectProductCodesWithSpacesOrSymbols",
+            "line": 329
+          },
+          {
+            "id": "PRO-005",
+            "method": "rejectDuplicateProductCode",
+            "line": 350
+          },
+          {
+            "id": "PRO-006",
+            "method": "rejectInvalidProductNames",
+            "line": 380
+          },
+          {
+            "id": "PRO-007",
+            "method": "editProductNameButNotCode",
+            "line": 397
+          },
+          {
+            "id": "PRO-008",
+            "method": "changeProductStatusKeepingFlagsCoherent",
+            "line": 435
+          },
+          {
+            "id": "PRO-009",
+            "method": "rejectInvalidProductStatuses",
+            "line": 469
+          },
+          {
+            "id": "PRO-011",
+            "method": "listOnlyOwnTenantProductsAsTenantAdmin",
+            "line": 515
           }
         ]
       },
@@ -335,6 +570,308 @@
             "id": "ADM-012",
             "method": "rejectInactiveTenantAdminLogin",
             "line": 908
+          }
+        ]
+      },
+      {
+        "name": "TenantManagementApi",
+        "file": "TenantManagementApi.ts",
+        "relativePath": "tests/components/api/TenantManagementApi.ts",
+        "atcs": [
+          {
+            "id": "TEN-001",
+            "method": "loadTenantList",
+            "line": 1564
+          },
+          {
+            "id": "TEN-002",
+            "method": "searchTenantsByNameAndRnec",
+            "line": 1590
+          },
+          {
+            "id": "TEN-003",
+            "method": "listTenantsByState",
+            "line": 1620
+          },
+          {
+            "id": "TEN-004",
+            "method": "pageTenantList",
+            "line": 1649
+          },
+          {
+            "id": "TEN-006",
+            "method": "searchWithSpecialCharacters",
+            "line": 1687
+          },
+          {
+            "id": "TEN-007",
+            "method": "keepTenantTotalAfterCreateAndDelete",
+            "line": 1715
+          },
+          {
+            "id": "TEN-010",
+            "method": "createTenantWithRequiredData",
+            "line": 270
+          },
+          {
+            "id": "TEN-011",
+            "method": "createTenantWithLogDatabase",
+            "line": 294
+          },
+          {
+            "id": "TEN-012",
+            "method": "createTenantAndEnableMacSerialValidation",
+            "line": 309
+          },
+          {
+            "id": "TEN-014",
+            "method": "rejectInvalidRnecs",
+            "line": 328
+          },
+          {
+            "id": "TEN-015",
+            "method": "rejectDuplicateRnec",
+            "line": 340
+          },
+          {
+            "id": "TEN-016",
+            "method": "rejectInvalidBusinessNames",
+            "line": 366
+          },
+          {
+            "id": "TEN-017",
+            "method": "validateDatabaseHosts",
+            "line": 382
+          },
+          {
+            "id": "TEN-018",
+            "method": "validateDatabaseNameAndUser",
+            "line": 397
+          },
+          {
+            "id": "TEN-019",
+            "method": "validateDatabasePasswordLength",
+            "line": 414
+          },
+          {
+            "id": "TEN-020",
+            "method": "validateLogDatabasePort",
+            "line": 424
+          },
+          {
+            "id": "TEN-022",
+            "method": "rejectContingencyEqualToMainOperator",
+            "line": 439
+          },
+          {
+            "id": "TEN-023",
+            "method": "rejectNegativeAndDecimalParameters",
+            "line": 448
+          },
+          {
+            "id": "TEN-024",
+            "method": "validateBlockedFingersLimit",
+            "line": 459
+          },
+          {
+            "id": "TEN-025",
+            "method": "createTenantWithOnlyRequiredFields",
+            "line": 470
+          },
+          {
+            "id": "TEN-030",
+            "method": "editBusinessNameAndParameters",
+            "line": 502
+          },
+          {
+            "id": "TEN-031",
+            "method": "keepRnecOnEdit",
+            "line": 522
+          },
+          {
+            "id": "TEN-032",
+            "method": "rejectInvalidDataOnEdit",
+            "line": 539
+          },
+          {
+            "id": "TEN-033",
+            "method": "saveValidLogo",
+            "line": 562
+          },
+          {
+            "id": "TEN-034",
+            "method": "rejectInvalidLogos",
+            "line": 581
+          },
+          {
+            "id": "TEN-035",
+            "method": "disableTenant",
+            "line": 603
+          },
+          {
+            "id": "TEN-036",
+            "method": "enableTenant",
+            "line": 620
+          },
+          {
+            "id": "TEN-038",
+            "method": "changeStatusOnlyWithPut",
+            "line": 637
+          },
+          {
+            "id": "TEN-040",
+            "method": "deleteTenantSoftly",
+            "line": 656
+          },
+          {
+            "id": "TEN-041",
+            "method": "refuseDeletingTenantWithChildren",
+            "line": 679
+          },
+          {
+            "id": "TEN-042",
+            "method": "keepRnecReservedAfterDelete",
+            "line": 695
+          },
+          {
+            "id": "TEN-043",
+            "method": "blockActionsOnDeletedTenant",
+            "line": 1124
+          },
+          {
+            "id": "TEN-050",
+            "method": "setValidApiCredentials",
+            "line": 777
+          },
+          {
+            "id": "TEN-051",
+            "method": "validateApiPasswordLength",
+            "line": 794
+          },
+          {
+            "id": "TEN-052",
+            "method": "validateApiPasswordComplexity",
+            "line": 806
+          },
+          {
+            "id": "TEN-053",
+            "method": "validateApiUsername",
+            "line": 816
+          },
+          {
+            "id": "TEN-054",
+            "method": "generateAutomaticSecret",
+            "line": 834
+          },
+          {
+            "id": "TEN-055",
+            "method": "refuseSecretWithWrongAdminPassword",
+            "line": 851
+          },
+          {
+            "id": "TEN-056",
+            "method": "validateCustomSecretLength",
+            "line": 867
+          },
+          {
+            "id": "TEN-057",
+            "method": "validateCustomSecretComplexity",
+            "line": 883
+          },
+          {
+            "id": "TEN-058",
+            "method": "showPlainSecretOnlyOnce",
+            "line": 902
+          },
+          {
+            "id": "TEN-059",
+            "method": "revokeSecret",
+            "line": 924
+          },
+          {
+            "id": "TEN-060",
+            "method": "regenerateActiveSecret",
+            "line": 961
+          },
+          {
+            "id": "TEN-061",
+            "method": "revealSensitiveFieldsOnlyWithAdminPassword",
+            "line": 1003
+          },
+          {
+            "id": "TEN-062",
+            "method": "limitRepeatedWrongAdminPasswords",
+            "line": 1046
+          },
+          {
+            "id": "TEN-063",
+            "method": "limitApiPasswordReuseToLastFive",
+            "line": 1096
+          },
+          {
+            "id": "TEN-070",
+            "method": "assignMainAndContingencyOperators",
+            "line": 1196
+          },
+          {
+            "id": "TEN-071",
+            "method": "clearContingencyOperator",
+            "line": 1211
+          },
+          {
+            "id": "TEN-072",
+            "method": "rejectUnavailableOperators",
+            "line": 1232
+          },
+          {
+            "id": "TEN-073",
+            "method": "toggleMacSerialValidation",
+            "line": 1260
+          },
+          {
+            "id": "TEN-074",
+            "method": "persistLockoutParameters",
+            "line": 1277
+          },
+          {
+            "id": "TEN-075",
+            "method": "persistFingerAndLocationOptions",
+            "line": 1301
+          },
+          {
+            "id": "TEN-080",
+            "method": "readTenantDetail",
+            "line": 1335
+          },
+          {
+            "id": "TEN-081",
+            "method": "answerUnknownTenantIdsInControlledWay",
+            "line": 1354
+          },
+          {
+            "id": "TEN-083",
+            "method": "isolateTenantDataFromOtherTenantAdmins",
+            "line": 1422
+          },
+          {
+            "id": "TEN-090",
+            "method": "readOnlyOwnTenant",
+            "line": 1441
+          },
+          {
+            "id": "TEN-091",
+            "method": "editOwnTenantAsTenantAdmin",
+            "line": 1462
+          },
+          {
+            "id": "TEN-092",
+            "method": "changeApiCredentialsAsTenantAdmin",
+            "line": 1495
+          },
+          {
+            "id": "TEN-093",
+            "method": "refuseTenantByIdToTenantAdmin",
+            "line": 1521
           }
         ]
       },
@@ -541,6 +1078,11 @@
         "relativePath": "tests/components/api/UsersApi.ts",
         "atcs": [
           {
+            "id": "CFG-008",
+            "method": "applyNewLockoutThresholdToAdminLogins",
+            "line": 629
+          },
+          {
             "id": "USR-001",
             "method": "listAdminsWithSearchAndState",
             "line": 389
@@ -588,7 +1130,7 @@
           {
             "id": "USR-011",
             "method": "refuseSelfDeactivationAndDeletion",
-            "line": 623
+            "line": 682
           }
         ]
       }
@@ -638,6 +1180,33 @@
             "id": "AUT-027",
             "method": "keepForcedChangePasswordOnNavigation",
             "line": 508
+          }
+        ]
+      },
+      {
+        "name": "DashboardPage",
+        "file": "DashboardPage.ts",
+        "relativePath": "tests/components/ui/DashboardPage.ts",
+        "atcs": [
+          {
+            "id": "DSH-001",
+            "method": "showTenantStatisticsCards",
+            "line": 58
+          },
+          {
+            "id": "DSH-002",
+            "method": "refreshStatisticsAfterTenantChanges",
+            "line": 76
+          },
+          {
+            "id": "DSH-003",
+            "method": "showControlledErrorWhenApiFails",
+            "line": 114
+          },
+          {
+            "id": "DSH-004",
+            "method": "redirectTenantUsersAwayFromDashboard",
+            "line": 144
           }
         ]
       },
@@ -715,6 +1284,23 @@
             "id": "AUT-038",
             "method": "retryAfterCryptoSessionExpired",
             "line": 554
+          }
+        ]
+      },
+      {
+        "name": "LogsPage",
+        "file": "LogsPage.ts",
+        "relativePath": "tests/components/ui/LogsPage.ts",
+        "atcs": [
+          {
+            "id": "LOG-002",
+            "method": "requireTenantAndDatesBeforeQuerying",
+            "line": 31
+          },
+          {
+            "id": "LOG-016",
+            "method": "exportQueriesToCsv",
+            "line": 89
           }
         ]
       },
@@ -832,6 +1418,23 @@
         ]
       },
       {
+        "name": "TenantDetailPage",
+        "file": "TenantDetailPage.ts",
+        "relativePath": "tests/components/ui/TenantDetailPage.ts",
+        "atcs": [
+          {
+            "id": "TEN-082",
+            "method": "exportTenantDataToCsv",
+            "line": 77
+          },
+          {
+            "id": "UAP-014",
+            "method": "keepUsersCounterAfterCreating",
+            "line": 35
+          }
+        ]
+      },
+      {
         "name": "TenantsPage",
         "file": "TenantsPage.ts",
         "relativePath": "tests/components/ui/TenantsPage.ts",
@@ -840,6 +1443,31 @@
             "id": "OPE-013",
             "method": "listActiveOperatorsInMainSelector",
             "line": 29
+          },
+          {
+            "id": "TEN-005",
+            "method": "keepStatusCountersWithMoreThan100Tenants",
+            "line": 280
+          },
+          {
+            "id": "TEN-013",
+            "method": "warnWithoutSuccessWhenMacConfigFails",
+            "line": 225
+          },
+          {
+            "id": "TEN-021",
+            "method": "requireFieldsInEmptyTenantForm",
+            "line": 73
+          },
+          {
+            "id": "TEN-026",
+            "method": "createOneTenantOnRapidClicks",
+            "line": 122
+          },
+          {
+            "id": "TEN-037",
+            "method": "keepTenantActiveWhenCancellingDisable",
+            "line": 172
           }
         ]
       }
@@ -878,6 +1506,15 @@
         "deactivateUserApp",
         "deleteUserApp",
         "readAdminLockoutThreshold"
+      ]
+    },
+    {
+      "name": "LogSeedSteps",
+      "file": "LogSeedSteps.ts",
+      "relativePath": "tests/components/steps/LogSeedSteps.ts",
+      "methods": [
+        "cleanup",
+        "prepareTenant"
       ]
     },
     {
@@ -921,6 +1558,24 @@
       ]
     },
     {
+      "name": "TenantAdminPanelSteps",
+      "file": "TenantAdminPanelSteps.ts",
+      "relativePath": "tests/components/steps/TenantAdminPanelSteps.ts",
+      "methods": [
+        "cleanup",
+        "prepareActivatedTenantAdmin"
+      ]
+    },
+    {
+      "name": "TenantChildrenSteps",
+      "file": "TenantChildrenSteps.ts",
+      "relativePath": "tests/components/steps/TenantChildrenSteps.ts",
+      "methods": [
+        "cleanup",
+        "prepareTenantWithChildren"
+      ]
+    },
+    {
       "name": "UiSessionSteps",
       "file": "UiSessionSteps.ts",
       "relativePath": "tests/components/steps/UiSessionSteps.ts",
@@ -929,13 +1584,31 @@
         "signInAsTenantUserAndReachLanding",
         "signOut"
       ]
+    },
+    {
+      "name": "UiTenantSteps",
+      "file": "UiTenantSteps.ts",
+      "relativePath": "tests/components/steps/UiTenantSteps.ts",
+      "methods": [
+        "cleanup",
+        "countByRnec",
+        "createTenantId",
+        "disableTenant",
+        "isActive",
+        "prepareExportTenant",
+        "prepareTenant",
+        "prepareUserApp",
+        "removeTenant",
+        "tenantStats",
+        "totalOf"
+      ]
     }
   ],
   "summary": {
-    "totalComponents": 23,
-    "totalATCs": 136,
-    "apiComponents": 16,
-    "uiComponents": 7,
-    "stepsModules": 6
+    "totalComponents": 32,
+    "totalATCs": 249,
+    "apiComponents": 22,
+    "uiComponents": 10,
+    "stepsModules": 10
   }
 }

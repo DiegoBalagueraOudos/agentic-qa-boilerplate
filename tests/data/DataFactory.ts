@@ -23,7 +23,7 @@ import type {
   CreateTenantPayload,
   CreateUserAppPayload,
 } from '@schemas/auth.types';
-import type { CreateBranchPayload, CreateDevicePayload, CreateTerminalPayload } from '@schemas/resources.types';
+import type { CreateBranchPayload, CreateDevicePayload, CreateProductPayload, CreateTerminalPayload } from '@schemas/resources.types';
 import type { CreateOperatorPayload } from '@schemas/security.types';
 
 import { faker } from '@faker-js/faker';
@@ -356,6 +356,76 @@ export class DataFactory {
   }
 
   // ============================================
+  // TENANTS (TEN cases)
+  // ============================================
+
+  /** RNEC of EXACTLY `length` characters: `QA` + upper-case alphanumerics (the valid shape is `[A-Z0-9]`, at most 100). */
+  static createRnecOfLength(length: number): string {
+    return `QA${faker.string.alphanumeric({ length: Math.max(length - 2, 0), casing: 'upper' })}`.slice(0, Math.max(length, 2));
+  }
+
+  /** Business name of EXACTLY `length` characters made of letters, `QA` first (the valid shape allows letters, digits and `. , - & ( )`). */
+  static createBusinessNameOfLength(length: number): string {
+    return `QA${faker.string.alpha({ length: Math.max(length - 2, 0), casing: 'lower' })}`.slice(0, Math.max(length, 2));
+  }
+
+  /** A 1x1 PNG as a data URI: the smallest logo the backend accepts. */
+  static readonly validLogoPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+  /** A 1x1 GIF as a data URI. */
+  static readonly gifLogo = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+  /** A plain text declared as `image/png`: not an image at all. */
+  static createTextLogoDeclaredAsPng(): string {
+    return `data:image/png;base64,${Buffer.from('esto es un texto, no una imagen').toString('base64')}`;
+  }
+
+  /** A PNG data URI of about `kilobytes` KB (a valid signature followed by filler). */
+  static createPngLogoOfKilobytes(kilobytes: number): string {
+    const signature = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+    return `data:image/png;base64,${Buffer.concat([signature, Buffer.alloc(kilobytes * 1024, 1)]).toString('base64')}`;
+  }
+
+  // ============================================
+  // DATA INTEGRITY (DAT cases)
+  // ============================================
+
+  /** A tenant API user name the backend accepts (4 to 50 letters, digits, `-`, `.`, `_`), unique per call. */
+  static createApiUsername(): string {
+    return `qax${faker.string.alphanumeric({ length: 12, casing: 'lower' })}`;
+  }
+
+  /** A tenant API password the backend accepts: 12 or more characters with upper case, lower case, a digit and a special character. */
+  static createApiPassword(): string {
+    return `Qa1!${faker.string.alphanumeric({ length: 14, casing: 'mixed' })}`;
+  }
+
+  /** A custom tenant secret the backend accepts: 32 or more characters with upper case, lower case, a digit and a special character. */
+  static createTenantSecret(length = 40): string {
+    return `Qs9#${faker.string.alphanumeric({ length: Math.max(length - 4, 0), casing: 'mixed' })}`;
+  }
+
+  /** API passwords of 16 characters that each break ONE rule (TEN-052): no upper case, no lower case, no digit, no special character. */
+  static createWeakApiPasswords(): InputRow[] {
+    return [
+      { label: 'no upper case', value: `qa1!${faker.string.alphanumeric({ length: 12, casing: 'lower' })}` },
+      { label: 'no lower case', value: `QA1!${faker.string.alphanumeric({ length: 12, casing: 'upper' })}` },
+      { label: 'no digit', value: `Qa!!${faker.string.alpha({ length: 12, casing: 'mixed' })}` },
+      { label: 'no special character', value: `Qa1${faker.string.alphanumeric({ length: 13, casing: 'mixed' })}` },
+    ];
+  }
+
+  /** Custom tenant secrets of 36 characters that each break ONE rule (TEN-057): no upper case, no lower case, no digit, no special character. */
+  static createWeakTenantSecrets(): InputRow[] {
+    return [
+      { label: 'no upper case', value: `qs9#${faker.string.alphanumeric({ length: 32, casing: 'lower' })}` },
+      { label: 'no lower case', value: `QS9#${faker.string.alphanumeric({ length: 32, casing: 'upper' })}` },
+      { label: 'no digit', value: `Qs##${faker.string.alpha({ length: 32, casing: 'mixed' })}` },
+      { label: 'no special character', value: `Qs9${faker.string.alphanumeric({ length: 33, casing: 'mixed' })}` },
+    ];
+  }
+
+  // ============================================
   // BRANCHES (SUC cases)
   // ============================================
 
@@ -428,6 +498,56 @@ export class DataFactory {
   /** CSV text for `import-csv`: header `CodSede,NombreSede,DireccionSede,Departamento` (`CsvBranchRowDto`) and one row per entry (no quoting needed for generated data). */
   static createBranchCsv(rows: { code: string, name: string, address?: string, department?: string }[], header = 'CodSede,NombreSede,DireccionSede,Departamento'): string {
     return [header, ...rows.map(row => [row.code, row.name, row.address ?? '', row.department ?? ''].join(','))].join('\n');
+  }
+
+  // ============================================
+  // PRODUCTS (PRO cases)
+  // ============================================
+
+  /** Unique product code of EXACTLY `length` characters: `QX` + upper-case alphanumerics (the valid shape is 7). */
+  static createProductCodeOfLength(length: number): string {
+    return `QX${faker.string.alphanumeric({ length: Math.max(length - 2, 0), casing: 'upper' })}`.slice(0, Math.max(length, 2));
+  }
+
+  /** Unique product name of EXACTLY `length` characters, `QAX` first (so searches and cleanup recognise it). */
+  static createProductNameOfLength(length: number): string {
+    return `QAX${faker.string.alpha({ length: Math.max(length - 3, 0), casing: 'lower' })}`.slice(0, Math.max(length, 3));
+  }
+
+  /** A valid product: unique 7-character code and unique name. */
+  static createProductPayload(overrides?: Partial<CreateProductPayload>): CreateProductPayload {
+    const code = this.createProductCodeOfLength(7);
+    return { ProductName: `QAX Producto ${code.slice(2)}`, ProductCode: code, ...overrides };
+  }
+
+  /** Product codes of the wrong length (PRO-003): 6 and 8 characters. The valid length is exactly 7. */
+  static createWrongLengthProductCodes(): InputRow[] {
+    return [
+      { label: '6 characters', value: this.createProductCodeOfLength(6) },
+      { label: '8 characters', value: this.createProductCodeOfLength(8) },
+    ];
+  }
+
+  /** Product codes of 7 characters that are not letters and digits only (PRO-004). */
+  static createMalformedProductCodes(): InputRow[] {
+    return [
+      { label: 'inner space', value: 'AB 1234' },
+      { label: 'leading space', value: ' AB1234' },
+      { label: 'trailing space', value: 'AB1234 ' },
+      { label: 'hyphen', value: 'AB-1234' },
+      { label: 'underscore', value: 'AB_1234' },
+      { label: 'symbol', value: 'AB#1234' },
+      { label: 'accented letter', value: 'ABCDÉ12' },
+    ];
+  }
+
+  /** Product statuses outside `Active`, `Inactive` and `Disabled` (PRO-009). */
+  static createInvalidProductStatuses(): InputRow[] {
+    return [
+      { label: 'unknown word', value: 'Archived' },
+      { label: 'deleted', value: 'Deleted' },
+      { label: 'empty', value: '' },
+    ];
   }
 
   // ============================================
