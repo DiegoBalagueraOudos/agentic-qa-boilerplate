@@ -73,6 +73,10 @@ export interface Store {
   summary: AtcSummary | null
   scripts: string[]
   warnings: string[]
+  /** Base URL where the shareable reports are published (`--reports-url`); null = not published yet. */
+  reportsUrl?: string | null
+  /** Link to the SharePoint folder or file where the zipped reports are stored (`--sharepoint-url`). */
+  sharepointUrl?: string | null
 }
 export interface Options {
   command: 'build' | 'serve'
@@ -82,6 +86,8 @@ export interface Options {
   dir: string
   port: number
   page: string
+  reportsUrl: string | null
+  sharepointUrl: string | null
   noOpen: boolean
   help: boolean
 }
@@ -99,7 +105,7 @@ const MAX_PAGE_BYTES = 18 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 19 * 1024 * 1024;
 const MAX_PATH_CHARS = 235;
 const IMAGE_NAME = /^[A-Z0-9][\w.-]*\.(?:png|jpe?g)$/i;
-const BUILD_OPTIONS = new Set(['root', 'out', 'results']);
+const BUILD_OPTIONS = new Set(['root', 'out', 'results', 'reports-url', 'sharepoint-url']);
 const SERVE_OPTIONS = new Set(['dir', 'port', 'page']);
 const IMAGE_TYPES: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' };
 const CSP = 'default-src \'none\'; img-src \'self\'; style-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\'; frame-ancestors \'none\'';
@@ -117,13 +123,15 @@ class WikiError extends Error {}
 const USAGE = `qa-wiki: build a local Markdown wiki folder from the QA store (publishes nothing).
 
 Usage:
-  bun scripts/qa-wiki.ts [build] [--root <dir>] [--out <dir>] [--results <file>]
+  bun scripts/qa-wiki.ts [build] [--root <dir>] [--out <dir>] [--results <file>] [--reports-url <https url>] [--sharepoint-url <https url>]
   bun scripts/qa-wiki.ts serve [--dir <dir>] [--port <n>] [--page <Page.md>] [--no-open]
 
 build:
   --root     QA store (default ${DEFAULT_ROOT}), read-only
   --out      output folder (default ${DEFAULT_OUT}); only an absent, empty or previously generated folder is replaced
   --results  Playwright ATC summary (default ${DEFAULT_RESULTS})
+  --reports-url  https base URL where the shared reports are published; adds direct links to the Reportes page
+  --sharepoint-url  https link to the SharePoint folder with the zipped reports; adds a download section to Reportes
 
 serve (preview on 127.0.0.1 only; approximate: raw HTML is shown escaped, only pie charts are drawn):
   --dir      folder to preview (default ${DEFAULT_OUT})
@@ -138,7 +146,7 @@ serve (preview on 127.0.0.1 only; approximate: raw HTML is shown escaped, only p
 // ============================================
 
 export function parseArgs(argv: string[]): Options {
-  const opts: Options = { command: 'build', root: DEFAULT_ROOT, out: DEFAULT_OUT, results: DEFAULT_RESULTS, dir: DEFAULT_OUT, port: DEFAULT_PORT, page: DEFAULT_PAGE, noOpen: false, help: false };
+  const opts: Options = { command: 'build', root: DEFAULT_ROOT, out: DEFAULT_OUT, results: DEFAULT_RESULTS, dir: DEFAULT_OUT, port: DEFAULT_PORT, page: DEFAULT_PAGE, reportsUrl: null, sharepointUrl: null, noOpen: false, help: false };
   const args = [...argv];
   if (args[0] === 'build' || args[0] === 'serve') { opts.command = args.shift() as Options['command']; }
   const allowed = opts.command === 'serve' ? SERVE_OPTIONS : BUILD_OPTIONS;
@@ -161,6 +169,14 @@ export function parseArgs(argv: string[]): Options {
       const page = toPosix(value).replace(/^\/+/, '');
       if (!page.endsWith('.md') || page.split('/').some(part => part === '' || part === '..' || part === '.')) { throw new WikiError('--page needs a relative .md page path inside the wiki, for example Home.md'); }
       opts.page = page;
+    }
+    else if (name === 'reports-url') {
+      if (!/^https:\/\/[^\s@?#]+$/.test(value)) { throw new WikiError('--reports-url needs an https URL without credentials, query or fragment, for example https://user.github.io/repo/qa-reports'); }
+      opts.reportsUrl = value.replace(/\/+$/, '');
+    }
+    else if (name === 'sharepoint-url') {
+      if (!/^https:\/\/[^\s@]+$/.test(value)) { throw new WikiError('--sharepoint-url needs an https URL without credentials or spaces'); }
+      opts.sharepointUrl = value;
     }
     else { opts[name as 'root' | 'out' | 'results' | 'dir'] = value; }
   }
@@ -342,7 +358,7 @@ function readScripts(file: string): string[] {
 }
 
 /** The only place that touches the disk for input. Everything it opens is named in the header. */
-export function readStore(opts: { root: string, results: string, packageJson?: string }): Store {
+export function readStore(opts: { root: string, results: string, packageJson?: string, reportsUrl?: string | null, sharepointUrl?: string | null }): Store {
   const warnings: string[] = [];
   const { cases, unreadable } = loadCases(opts.root);
   for (const file of unreadable) { warnings.push(`case without frontmatter skipped: ${toPosix(file).split('/').slice(-2).join('/')}`); }
@@ -354,6 +370,8 @@ export function readStore(opts: { root: string, results: string, packageJson?: s
     summary: readSummary(opts.results, warnings),
     scripts: readScripts(opts.packageJson ?? join(REPO_ROOT, 'package.json')),
     warnings,
+    reportsUrl: opts.reportsUrl ?? null,
+    sharepointUrl: opts.sharepointUrl ?? null,
   };
 }
 
@@ -449,6 +467,7 @@ function homePage(store: Store, names: Names): string {
     '> Vista previa local, no publicado.',
     `Datos al: ${latestDate(store) || 'sin datos'}`,
     `Casos: ${store.cases.length} en ${prefixes.length} prefijos. Bugs: ${store.bugs.length}. Corridas: ${store.runs.length}.`,
+    `Reportes interactivos: ${mdLink('ver la página de Reportes', file, 'Reportes.md')}`,
     '## Casos por prefijo',
     table(['Prefijo', 'Casos', 'Pendiente', 'En automatización', 'Automatizado', 'Manual', 'Deferred', 'No aplica', 'PASS', 'FAIL con defecto', 'EXPECTED_FAIL', 'Última corrida'], rows),
     '## Estado de automatización',
@@ -587,6 +606,7 @@ function reportsPage(store: Store): string {
     ['allure:generate', 'genera el reporte Allure estático a partir de los resultados'],
     ['allure:open', 'abre el reporte Allure generado'],
     ['test:report', 'abre el reporte HTML de Playwright'],
+    ['reports:share', 'prepara Allure y Playwright para compartir, con correos, rutas y credenciales redactados'],
   ];
   const commands = wanted.filter(([name]) => store.scripts.includes(name)).map(([name, what]) => `- \`bun run ${name}\`: ${what}`);
   const summary = store.summary
@@ -599,15 +619,53 @@ function reportsPage(store: Store): string {
         ['Ejecuciones', store.summary.executions],
       ])
     : 'Sin resultados de ejecución disponibles.';
+  const url = store.reportsUrl ?? null;
+  const links = url === null
+    ? []
+    : [
+        '## Abrir los reportes',
+        [
+          `- [Portada de los reportes](${url}/)`,
+          `- [Reporte Allure](${url}/allure/index.html)`,
+          `- [Reporte Playwright](${url}/playwright/index.html)`,
+        ].join('\n'),
+      ];
+  const download = store.sharepointUrl
+    ? [
+        '## Descargar desde SharePoint',
+        [
+          `- [Descargar los reportes (.zip) desde SharePoint](${store.sharepointUrl})`,
+          '- SharePoint no muestra estos reportes en el navegador: descarga el `.zip`, descomprímelo y abre `index.html` en tu equipo.',
+        ].join('\n'),
+      ]
+    : [];
+  const publish = store.scripts.includes('reports:share')
+    ? [
+        '## Cómo publicarlos',
+        [
+          '1. `bun run reports:share --since <fecha>`: prepara el paquete en `share-reports/qa-reports/`.',
+          '2. Copia `share-reports/qa-reports/` a `docs/qa-reports/` del repositorio.',
+          '3. Haz commit y `git push`; con GitHub Pages activo sobre `/docs` quedan publicados.',
+          '4. Regenera esta wiki con `bun run qa:wiki --reports-url <URL base de los reportes>` para que los enlaces apunten ahí.',
+        ].join('\n'),
+      ]
+    : [];
   return [
     '# Reportes',
-    'Los reportes interactivos se producen en la máquina de quien ejecuta las pruebas. Esta wiki no los incluye.',
+    url === null
+      ? 'Los reportes interactivos se producen en la máquina de quien ejecuta las pruebas. Esta wiki no los incluye.'
+      : 'Los reportes interactivos están publicados fuera de esta wiki. Ábrelos directamente desde estos enlaces.',
+    ...links,
+    ...download,
     '## Cómo producirlos',
     commands.length > 0 ? commands.join('\n') : 'Sin comandos de reporte disponibles.',
+    ...publish,
     '## Últimos resultados de ejecución',
+    'Resumen de la última ejecución registrada; puede cubrir solo una parte de las pruebas.',
     summary,
-    '## Enlace a los reportes interactivos',
-    '> ENLACE PENDIENTE: decisión del dueño (adjunto comprimido, hosting estático o ninguno). Nada en esta wiki apunta a un reporte que no exista.',
+    ...(url === null
+      ? ['## Enlace a los reportes interactivos', '> ENLACE PENDIENTE: decisión del dueño (adjunto comprimido, hosting estático o ninguno). Nada en esta wiki apunta a un reporte que no exista.']
+      : []),
   ].join('\n\n');
 }
 
@@ -865,7 +923,7 @@ export function run(argv: string[], log: (line: string) => void = console.error,
     }
     if (!existsSync(opts.root) || !statSync(opts.root).isDirectory()) { throw new WikiError(`QA root not found: ${toPosix(opts.root)}`); }
     checkOutDir(opts.out, opts.root, repoRoot);
-    const store = readStore({ root: opts.root, results: opts.results, packageJson: join(repoRoot, 'package.json') });
+    const store = readStore({ root: opts.root, results: opts.results, packageJson: join(repoRoot, 'package.json'), reportsUrl: opts.reportsUrl, sharepointUrl: opts.sharepointUrl });
     for (const warning of store.warnings) { log(`! ${warning}`); }
     const pages = buildWiki(store);
     const hits = scanPages(pages);

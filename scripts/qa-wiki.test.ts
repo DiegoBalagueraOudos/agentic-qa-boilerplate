@@ -194,6 +194,38 @@ describe('model and pages', () => {
     expect(pages.get('Reportes.md')).toContain('bun run allure:generate');
   });
 
+  it('--reports-url puts direct links in Home and Reportes and drops the pending marker', () => {
+    const url = 'https://owner.github.io/repo/qa-reports';
+    expect(parseArgs(['--reports-url', `${url}/`]).reportsUrl).toBe(url);
+    const pages = buildWiki(readStore({ root, results: resultsFile, reportsUrl: url }));
+    expect(pages.get('Reportes.md')).toContain(`[Reporte Allure](${url}/allure/index.html)`);
+    expect(pages.get('Reportes.md')).toContain(`[Reporte Playwright](${url}/playwright/index.html)`);
+    expect(pages.get('Reportes.md')).not.toContain('ENLACE PENDIENTE');
+    expect(pages.get('Reportes.md')).toContain('## Abrir los reportes');
+    expect(pages.get('Reportes.md')).toContain('bun run reports:share');
+    expect(pages.get('Home.md')).toContain('](Reportes.md)');
+    expect(pages.get('Home.md')).not.toContain(url);
+    expect(pages.get('Reportes.md')).not.toContain('Descargar desde SharePoint');
+  });
+
+  it('--sharepoint-url adds a download section to Reportes only', () => {
+    const sp = 'https://contoso.sharepoint.com/sites/qa/Documentos/Reportes%20QA?e=abc';
+    expect(parseArgs(['--sharepoint-url', sp]).sharepointUrl).toBe(sp);
+    for (const bad of ['http://x.com/a', 'https://u:p@x.com/a', 'ftp://x.com/a', 'https://x .com']) {
+      expect(() => parseArgs(['--sharepoint-url', bad])).toThrow('--sharepoint-url');
+    }
+    const pages = buildWiki(readStore({ root, results: resultsFile, sharepointUrl: sp }));
+    expect(pages.get('Reportes.md')).toContain('## Descargar desde SharePoint');
+    expect(pages.get('Reportes.md')).toContain(`(${sp})`);
+    expect(pages.get('Home.md')).not.toContain('sharepoint');
+  });
+
+  it('--reports-url refuses anything but a plain https URL', () => {
+    for (const bad of ['http://x.io/a', 'https://user:pw@x.io/a', 'https://x.io/a?token=1', 'https://x.io/a#b', 'javascript:alert(1)', 'https://x .io']) {
+      expect(() => parseArgs(['--reports-url', bad])).toThrow('--reports-url');
+    }
+  });
+
   it('run pages come from run.json without the absolute source path', () => {
     const pages = buildWiki(readStore({ root, results: resultsFile }));
     const page = pages.get('Corridas/2026-10-01-smoke.md') as string;
