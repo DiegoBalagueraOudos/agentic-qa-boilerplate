@@ -1,0 +1,223 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e\int\form-rules.test.ts >> INT: forms and the backend rules >> INT-002: should show the rules only the backend enforces on their field
+- Location: tests\e2e\int\form-rules.test.ts (L68)
+
+# Error details
+
+```
+Error: 3 server-only rule checks failed: name of 61 characters: no message under the "fullName" field (only the generic «Error inesperado»); position of 101 characters: no message under the "position" field (only the generic «Error inesperado»); FTP service URL: no message under the "serviceUrl" field (only the generic «Error inesperado»)
+```
+
+# Test source
+
+```ts
+  31  |   private async evidence(name: string): Promise<void> {
+  32  |     const body = await this.page.screenshot();
+  33  |     await this.page.screenshot({ path: test.info().outputPath(`${name}.png`) });
+  34  |     await test.info().attach(name, { body, contentType: 'image/png' });
+  35  |   }
+  36  | 
+  37  |   /** Open the "Nuevo usuario" form of the Usuarios App tab of a tenant. */
+  38  |   private async openUserAppForm(tenantId: number): Promise<void> {
+  39  |     await this.page.goto(this.buildUrl(`/tenants/${tenantId}`));
+  40  |     await this.page.getByText('Usuarios App', { exact: true }).click();
+  41  |     await this.page.getByRole('button', { name: 'Nuevo usuario' }).click();
+  42  |     await expect(this.page.locator('input[formcontrolname="fullName"]')).toBeVisible();
+  43  |   }
+  44  | 
+  45  |   /** Open the "Nuevo operador" form. */
+  46  |   private async openOperatorForm(): Promise<void> {
+  47  |     await this.page.goto(this.buildUrl('/operators'));
+  48  |     await this.page.getByRole('button', { name: 'Nuevo operador' }).click();
+  49  |     await expect(this.page.locator('input[formcontrolname="operatorCode"]')).toBeVisible();
+  50  |   }
+  51  | 
+  52  |   /**
+  53  |    * Type the values of a form (each one hidden from the step titles) and press its submit button. Returns the status of the create
+  54  |    * request, or null when the form sent nothing (the front refused the value itself).
+  55  |    */
+  56  |   private async submitForm(form: 'userapp' | 'operator', values: Record<string, string>): Promise<number | null> {
+  57  |     for (const [field, value] of Object.entries(values)) {
+  58  |       await this.fillSecret(this.page.locator(`input[formcontrolname="${field}"]`), value);
+  59  |     }
+  60  |     const created = this.page.waitForResponse(response => response.request().method() === 'POST' && /\/api\/(?:tenants\/\d+\/appusers|operators)$/i.test(new URL(response.url()).pathname), { timeout: 5000 }).then(response => response.status()).catch(() => null);
+  61  |     await this.page.getByRole('button', { name: form === 'userapp' ? 'Crear usuario' : 'Crear operador' }).click();
+  62  |     return created;
+  63  |   }
+  64  | 
+  65  |   /** The messages shown under the fields of the open form (red text), in order. */
+  66  |   private async fieldMessages(): Promise<string[]> {
+  67  |     const messages = await this.page.locator('form p.text-red-600').allTextContents();
+  68  |     return messages.map(text => text.trim()).filter(text => text !== '');
+  69  |   }
+  70  | 
+  71  |   /**
+  72  |    * ATC INT-001: the Usuarios App table shows the login name of each user in its "Username" column. The backend sends `UserName` and the
+  73  |    * screen reads another field name, so the column comes out empty (HAL-08).
+  74  |    *
+  75  |    * @param args - The tenant and the user it holds
+  76  |    * @param args.tenantId - Tenant id (route)
+  77  |    * @param args.username - The login name the API holds for the user
+  78  |    */
+  79  |   @atc('INT-001')
+  80  |   async showUsernameColumnOfUserApps(args: { tenantId: number, username: string }): Promise<void> {
+  81  |     await this.page.goto(this.buildUrl(`/tenants/${args.tenantId}`));
+  82  |     await this.page.getByText('Usuarios App', { exact: true }).click();
+  83  |     const rows = this.page.locator('tbody tr');
+  84  |     await expect(rows).toHaveCount(1);
+  85  |     const header = await this.page.locator('thead th').allTextContents();
+  86  |     const column = header.findIndex(text => text.trim() === 'Username');
+  87  |     expect(column, 'the table has a Username column').toBeGreaterThanOrEqual(0);
+  88  |     const shown = ((await rows.first().locator('td').nth(column).textContent()) ?? '').trim();
+  89  |     if (shown !== args.username) {
+  90  |       throw new Error(`the Username column shows ${shown === '' ? 'nothing' : `"${shown}"`} for a user whose login name is ${args.username}`);
+  91  |     }
+  92  |   }
+  93  | 
+  94  |   /**
+  95  |    * ATC INT-002: a value that the front accepts and only the backend refuses (a name of 61 characters, a position of 101, a weak
+  96  |    * password, an FTP service URL) is refused with 400 AND the form shows the message on that field, not the generic «Error inesperado».
+  97  |    * Today the front has no such rules and the person only sees the generic toast (HAL-13, HAL-26, HAL-33).
+  98  |    *
+  99  |    * @param args - The tenant of the user form and the rows to try
+  100 |    * @param args.tenantId - Tenant id (route of the user form)
+  101 |    * @param args.rows - Values the front accepts and the backend refuses
+  102 |    */
+  103 |   @atc('INT-002')
+  104 |   async showServerOnlyRulesOnTheirField(args: { tenantId: number, rows: ServerOnlyRule[] }): Promise<void> {
+  105 |     const failures: string[] = [];
+  106 |     for (const row of args.rows) {
+  107 |       try {
+  108 |         if (row.form === 'userapp') {
+  109 |           await this.openUserAppForm(args.tenantId);
+  110 |         }
+  111 |         else {
+  112 |           await this.openOperatorForm();
+  113 |         }
+  114 |         const status = await this.submitForm(row.form, row.values);
+  115 |         if (status !== null && status !== 400) {
+  116 |           failures.push(`${row.label}: the backend answered ${status} (expected a 400 refusal, or the front stopping the value)`);
+  117 |           continue;
+  118 |         }
+  119 |         const messages = await this.fieldMessages();
+  120 |         const generic = await this.page.getByText(GENERIC_ERROR).filter({ visible: true }).count();
+  121 |         if (messages.length === 0) {
+  122 |           failures.push(`${row.label}: no message under the "${row.field}" field${generic > 0 ? ' (only the generic «Error inesperado»)' : ''}`);
+  123 |           await this.evidence(`int-002-${row.field}`);
+  124 |         }
+  125 |       }
+  126 |       catch (error) {
+  127 |         failures.push(`${row.label}: ${String((error as Error).message).split('\n')[0]}`);
+  128 |       }
+  129 |     }
+  130 |     if (failures.length > 0) {
+> 131 |       throw new Error(`${failures.length} server-only rule checks failed: ${failures.join('; ')}`);
+      |             ^ Error: 3 server-only rule checks failed: name of 61 characters: no message under the "fullName" field (only the generic «Error inesperado»); position of 101 characters: no message under the "position" field (only the generic «Error inesperado»); FTP service URL: no message under the "serviceUrl" field (only the generic «Error inesperado»)
+  132 |     }
+  133 |   }
+  134 | 
+  135 |   /**
+  136 |    * ATC INT-004: when the backend answers `VALIDATION_ERROR` with several errors at once, each one is shown under its own field. The
+  137 |    * user form is sent with a name of 61 characters and a position of 101: two fields the front lets through, two messages.
+  138 |    *
+  139 |    * @param args - The tenant and the values to send
+  140 |    * @param args.tenantId - Tenant id (route of the user form)
+  141 |    * @param args.values - Invalid values the front accepts
+  142 |    * @param args.invalidFields - How many of them the backend refuses (one message each)
+  143 |    */
+  144 |   @atc('INT-004')
+  145 |   async showEachValidationErrorOnItsField(args: { tenantId: number, values: Record<string, string>, invalidFields: number }): Promise<void> {
+  146 |     await this.openUserAppForm(args.tenantId);
+  147 |     const status = await this.submitForm('userapp', args.values);
+  148 |     expect(status, 'control: the backend refuses the values the front lets through').toBe(400);
+  149 |     const messages = await this.fieldMessages();
+  150 |     const expected = args.invalidFields;
+  151 |     if (messages.length < expected) {
+  152 |       await this.evidence('int-004-form');
+  153 |       const generic = await this.page.getByText(GENERIC_ERROR).filter({ visible: true }).count();
+  154 |       throw new Error(`${messages.length} field message(s) shown for ${expected} invalid fields${generic > 0 ? ', and the generic «Error inesperado» is shown' : ''}`);
+  155 |     }
+  156 |   }
+  157 | 
+  158 |   /** The text of the first toast-like notice on screen (the SPA shows its notices as small cards at the bottom right), or an empty text. */
+  159 |   private async noticeText(): Promise<string> {
+  160 |     const notice = this.page.locator('[role="alert"], [role="status"]').first();
+  161 |     return (await notice.isVisible().catch(() => false)) ? ((await notice.textContent()) ?? '').replace(/\s+/g, ' ').trim() : '';
+  162 |   }
+  163 | 
+  164 |   /**
+  165 |    * ATC INT-003: each failure code reaches the person as a clear message on screen: a 404 (an id that does not exist), a 400 (a value the
+  166 |    * backend refuses) and a 429 (too many requests, forced in the browser). A blank screen, or the generic «Error inesperado», is wrong
+  167 |    * (HAL-13, HAL-19, HAL-10).
+  168 |    *
+  169 |    * @param args - The values that make the backend answer 400 on the operator form
+  170 |    * @param args.operator - An operator with an FTP service URL
+  171 |    * @param args.operator.operatorCode - Operator code
+  172 |    * @param args.operator.operatorName - Operator name
+  173 |    * @param args.operator.serviceUrl - Service URL the backend refuses
+  174 |    */
+  175 |   @atc('INT-003')
+  176 |   async showClearMessageForEachStatusCode(args: { operator: { operatorCode: string, operatorName: string, serviceUrl: string } }): Promise<void> {
+  177 |     const failures: string[] = [];
+  178 | 
+  179 |     // 404: a tenant that does not exist
+  180 |     await this.page.goto(this.buildUrl('/tenants/2147000000'));
+  181 |     const notFound = this.page.getByText(/no fue encontrado|no encontrado|no existe/i).filter({ visible: true });
+  182 |     try {
+  183 |       await expect(notFound.first()).toBeVisible({ timeout: 12000 });
+  184 |     }
+  185 |     catch {
+  186 |       failures.push(`404 (id that does not exist): no «not found» message is shown (notice: "${await this.noticeText() || 'none'}")`);
+  187 |     }
+  188 |     const mainText = ((await this.page.locator('main').textContent().catch(() => '')) ?? '').trim();
+  189 |     if (mainText === '') {
+  190 |       failures.push('404 (id that does not exist): the screen is left blank');
+  191 |       await this.evidence('int-003-not-found');
+  192 |     }
+  193 | 
+  194 |     // 400: a value the backend refuses
+  195 |     await this.openOperatorForm();
+  196 |     const status = await this.submitForm('operator', args.operator);
+  197 |     const generic = await this.page.getByText(GENERIC_ERROR).filter({ visible: true }).count();
+  198 |     if (status !== 400) {
+  199 |       failures.push(`400 (value refused): the backend answered ${String(status)}`);
+  200 |     }
+  201 |     else if (generic > 0 && (await this.fieldMessages()).length === 0) {
+  202 |       failures.push('400 (value refused): the screen shows only the generic «Error inesperado»');
+  203 |       await this.evidence('int-003-bad-request');
+  204 |     }
+  205 | 
+  206 |     // 429: too many requests, forced in the browser
+  207 |     const tooMany = { status: 429, contentType: 'application/json', body: '{}' };
+  208 |     await this.page.route(/\/api\/operators(\?|$)/i, async route => route.fulfill(tooMany));
+  209 |     await this.page.goto(this.buildUrl('/operators'));
+  210 |     const limited = this.page.getByText(/demasiad|l.mite|espera|m.s tarde/i).filter({ visible: true });
+  211 |     try {
+  212 |       await expect(limited.first()).toBeVisible({ timeout: 10000 });
+  213 |     }
+  214 |     catch {
+  215 |       failures.push(`429 (too many requests): no message about the limit is shown (notice: "${await this.noticeText() || 'none'}")`);
+  216 |     }
+  217 |     await this.page.unroute(/\/api\/operators(\?|$)/i);
+  218 | 
+  219 |     if (failures.length > 0) {
+  220 |       throw new Error(`${failures.length} status code message checks failed: ${failures.join('; ')}`);
+  221 |     }
+  222 |   }
+  223 | 
+  224 |   /**
+  225 |    * ATC INT-005: with the backend down, the Operadores and Usuarios screens show an error notice, stop the spinner and do NOT present the
+  226 |    * empty list as «no records found» (a misleading state, HAL-53). The failure is forced by aborting the list request in the browser.
+  227 |    */
+  228 |   @atc('INT-005')
+  229 |   async showErrorAndStopSpinnerWhenBackendDown(): Promise<void> {
+  230 |     await this.page.route(/\/api\/(?:operators|user)(?:\?|$)/i, async route => route.abort());
+  231 |     const failures: string[] = [];
+```
