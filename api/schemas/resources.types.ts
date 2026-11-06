@@ -203,6 +203,7 @@ export interface TenantFullData {
   IsDeleted: boolean
   DeletedAt?: string | null
   DeletedBy?: string | null
+  CreatedAt?: string
   CreatedBy: string
   UpdatedBy?: string | null
   HasApiCredentials: boolean

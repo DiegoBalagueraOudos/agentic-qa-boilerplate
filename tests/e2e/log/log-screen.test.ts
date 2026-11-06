@@ -1,5 +1,5 @@
 /**
- * LOG screen cases: the Administrator "Log Consultas" screen (LOG-002, LOG-016).
+ * LOG screen cases: the Administrator "Log Consultas" screen (LOG-002, LOG-016, INT-008).
  *
  * LOG-016 works on a GENERATED tenant with log rows inserted into the local Mongo (`LogsOperadorQA`, through Docker) in `beforeAll`
  * and deleted, with the tenant, in `afterAll`. It keeps the saved Administrator session. File-level trace off.
@@ -39,5 +39,9 @@ test.describe('LOG: Log Consultas screen', () => {
 
   test('LOG-016: should export the queries to a CSV inside a ZIP', async ({ ui }) => {
     await ui.logs.exportQueriesToCsv({ tenant, rows: seed.own['consultas-nr'] });
+  });
+
+  test('INT-008: should show the same instant on the screen and in the CSV', async ({ ui }) => {
+    await ui.logs.showSameInstantOnScreenAndCsv({ tenant, rows: seed.own['consultas-nr'] });
   });
 });

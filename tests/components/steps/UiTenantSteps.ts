@@ -10,6 +10,7 @@
  */
 
 import type { APIRequestContext } from '@playwright/test';
+import type { BranchData } from '@schemas/resources.types';
 
 import { AuthApi } from '@api/AuthApi';
 import { TenantManagementApi } from '@api/TenantManagementApi';
@@ -108,10 +109,20 @@ export class UiTenantSteps extends TestContext {
     return { ...tenant, branches: 3, terminals: 2, devices: 1, userApps: 2, products: 2, combinedRows: 3 };
   }
 
-  /** Create a UserApp in a tenant (the screen case then adds one more through the form). */
-  async prepareUserApp(tenantId: number): Promise<void> {
+  /** Create a UserApp in a tenant (the screen case then adds one more through the form). Returns its login name. */
+  async prepareUserApp(tenantId: number): Promise<{ username: string }> {
     const management = await this.ensureSession();
-    await management.createChild(`/tenants/${tenantId}/appusers`, this.data.createUserAppPayload());
+    const payload = this.data.createUserAppPayload();
+    await management.createChild(`/tenants/${tenantId}/appusers`, payload);
+    return { username: String(payload.UserName) };
+  }
+
+  /** Delete the operators whose code or name holds `fragment` (an operator a screen case may have created by mistake). */
+  async removeOperators(fragment: string): Promise<void> {
+    const management = await this.ensureSession();
+    for (const id of await management.listChildIds(`/operators?SearchTerm=${encodeURIComponent(fragment)}&PageSize=20`)) {
+      await management.deleteChild(`/operators/${id}`);
+    }
   }
 
   /** Total records of a list route of the tenant, through the API (the expected counts of the screen cases). */
@@ -164,6 +175,54 @@ export class UiTenantSteps extends TestContext {
     const management = await this.ensureSession();
     const [, body] = await management.getTenant(tenantId);
     return body.Data?.IsActive === true && body.Data.IsDeleted === false;
+  }
+
+  /** The branches of a tenant whose code or name holds `term` (the first 100), read through the API. */
+  async branchRows(tenantId: number, term: string): Promise<BranchData[]> {
+    const management = await this.ensureSession();
+    return management.listRows<BranchData>(`/tenants/${tenantId}/branches?SearchTerm=${encodeURIComponent(term)}&PageSize=100`);
+  }
+
+  /** Delete every branch of a tenant whose code or name holds `term`, 100 at a time. Returns how many it deleted; a refusal is reported. */
+  async removeBranches(tenantId: number, term: string): Promise<number> {
+    const management = await this.ensureSession();
+    const route = `/tenants/${tenantId}/branches`;
+    let removed = 0;
+    for (let round = 0; round < 40; round++) {
+      const ids = await management.listChildIds(`${route}?SearchTerm=${encodeURIComponent(term)}&PageSize=100`);
+      if (ids.length === 0) {
+        return removed;
+      }
+      for (const id of ids) {
+        const status = await management.deleteChild(`${route}/${id}`);
+        if (status !== 200) {
+          throw new Error(`delete branch #${id} of tenant #${tenantId}: HTTP ${status} after ${removed} deleted`);
+        }
+        removed++;
+      }
+    }
+    throw new Error(`branches of tenant #${tenantId} still left after ${removed} deleted`);
+  }
+
+  /** Create a branch in a tenant through the API (the localization case needs accents the form would not be asked for). */
+  async addBranch(tenantId: number, payload: { BranchCode: string, BranchName: string, Address: string, Department: string }): Promise<number> {
+    const management = await this.ensureSession();
+    return management.createChild(`/tenants/${tenantId}/branches`, payload);
+  }
+
+  /** The creation instant of a tenant as the API states it. */
+  async createdAtOf(tenantId: number): Promise<string> {
+    const management = await this.ensureSession();
+    const [, body] = await management.getTenant(tenantId);
+    return String(body.Data?.CreatedAt ?? '');
+  }
+
+  /** Whether a tenant with this RNEC is active and not deleted right now (read through the API, deleted rows included). */
+  async isActiveByRnec(rnec: string): Promise<boolean> {
+    const management = await this.ensureSession();
+    const [, body] = await management.listTenants({ searchTerm: rnec, includeDeleted: true, pageSize: 20 });
+    const row = (body.Data?.Data ?? []).find(item => item.Rnec === rnec);
+    return row !== undefined && row.IsActive === true && row.IsDeleted === false;
   }
 
   /** Delete the tenants this instance prepared or found, sign out and close the context. Failures are reported together. */

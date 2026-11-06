@@ -23,9 +23,11 @@ import { ApiBase } from '@api/ApiBase';
 import { AuthApi } from '@api/AuthApi';
 import { BranchesApi } from '@api/BranchesApi';
 import { ConcurrencyApi } from '@api/ConcurrencyApi';
+import { ContractApi } from '@api/ContractApi';
 import { DataIntegrityApi } from '@api/DataIntegrityApi';
 import { DataSecurityApi } from '@api/DataSecurityApi';
 import { DevicesApi } from '@api/DevicesApi';
+import { HealthApi } from '@api/HealthApi';
 import { LogsApi } from '@api/LogsApi';
 import { OperatorsApi } from '@api/OperatorsApi';
 import { PlatformConfigApi } from '@api/PlatformConfigApi';
@@ -96,6 +98,12 @@ export class ApiFixture extends ApiBase {
   /** Logs component - log review views and their filters (LOG cases) */
   readonly logs: LogsApi;
 
+  /** Contract component - the API against its published contract and its broker (INT cases) */
+  readonly contract: ContractApi;
+
+  /** Health component - the public health endpoint (SMK cases) */
+  readonly health: HealthApi;
+
   /** Terminals component - minimal data helper for the SUC cases (no ATC) */
   readonly terminals: TerminalsApi;
 
@@ -126,6 +134,8 @@ export class ApiFixture extends ApiBase {
     this.concurrency = new ConcurrencyApi(options);
     this.tenantManagement = new TenantManagementApi(options);
     this.logs = new LogsApi(options);
+    this.contract = new ContractApi(options);
+    this.health = new HealthApi(options);
     this.terminals = new TerminalsApi(options);
     this.devices = new DevicesApi(options);
     this.roles = new RolesApi(options);
@@ -157,6 +167,7 @@ export class ApiFixture extends ApiBase {
     this.concurrency.setCryptoSession(state);
     this.tenantManagement.setCryptoSession(state);
     this.logs.setCryptoSession(state);
+    this.contract.setCryptoSession(state);
     this.terminals.setCryptoSession(state);
     this.devices.setCryptoSession(state);
     this.roles.setCryptoSession(state);
@@ -180,6 +191,7 @@ export class ApiFixture extends ApiBase {
     this.concurrency.clearCryptoSession();
     this.tenantManagement.clearCryptoSession();
     this.logs.clearCryptoSession();
+    this.contract.clearCryptoSession();
     this.terminals.clearCryptoSession();
     this.devices.clearCryptoSession();
     this.roles.clearCryptoSession();
@@ -208,6 +220,7 @@ export class ApiFixture extends ApiBase {
     this.concurrency.setAuthToken(token);
     this.tenantManagement.setAuthToken(token);
     this.logs.setAuthToken(token);
+    this.contract.setAuthToken(token);
     this.terminals.setAuthToken(token);
     this.devices.setAuthToken(token);
     this.roles.setAuthToken(token);
@@ -235,6 +248,7 @@ export class ApiFixture extends ApiBase {
     this.concurrency.clearAuthToken();
     this.tenantManagement.clearAuthToken();
     this.logs.clearAuthToken();
+    this.contract.clearAuthToken();
     this.terminals.clearAuthToken();
     this.devices.clearAuthToken();
     this.roles.clearAuthToken();

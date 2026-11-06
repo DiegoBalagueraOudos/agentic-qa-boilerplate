@@ -1760,6 +1760,12 @@ export class TenantManagementApi extends SecureApi {
     return (body.Data?.Data ?? []).map(row => row.Id ?? row.IdProduct ?? 0).filter(id => id > 0);
   }
 
+  /** The rows of the first page of a list route; asserts nothing. */
+  async listRows<T>(route: string): Promise<T[]> {
+    const [, body] = await this.secureGET<PagedData<T>>(route);
+    return body.Data?.Data ?? [];
+  }
+
   /** Delete a child row; returns the HTTP status. */
   async deleteChild(route: string): Promise<number> {
     const [response] = await this.secureDELETE<unknown>(route);

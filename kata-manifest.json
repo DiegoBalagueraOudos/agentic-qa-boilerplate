@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generatedAt": "2026-11-04T22:15:05.062Z",
+  "generatedAt": "2026-11-06T15:15:35.718Z",
   "components": {
     "api": [
       {
@@ -115,14 +115,41 @@
         "relativePath": "tests/components/api/ConcurrencyApi.ts",
         "atcs": [
           {
+            "id": "CON-001",
+            "method": "refuseSimultaneousEditsOfTheSameOperator",
+            "line": 225
+          },
+          {
             "id": "CON-002",
             "method": "createOnlyOneOperatorFromSimultaneousRequests",
-            "line": 194
+            "line": 195
           },
           {
             "id": "CON-003",
             "method": "keepOneRecordOnDoubleSubmit",
-            "line": 206
+            "line": 207
+          },
+          {
+            "id": "CON-005",
+            "method": "recoverSessionAfterBackendRestart",
+            "line": 296
+          }
+        ]
+      },
+      {
+        "name": "ContractApi",
+        "file": "ContractApi.ts",
+        "relativePath": "tests/components/api/ContractApi.ts",
+        "atcs": [
+          {
+            "id": "INT-006",
+            "method": "answerEveryReadRouteAsTheContractSays",
+            "line": 75
+          },
+          {
+            "id": "INT-007",
+            "method": "keepExportRequestControlledWhenBrokerIsDown",
+            "line": 132
           }
         ]
       },
@@ -224,6 +251,18 @@
             "id": "DIS-010",
             "method": "importDevicesFromCsv",
             "line": 584
+          }
+        ]
+      },
+      {
+        "name": "HealthApi",
+        "file": "HealthApi.ts",
+        "relativePath": "tests/components/api/HealthApi.ts",
+        "atcs": [
+          {
+            "id": "SMK-01",
+            "method": "reportEveryDependencyHealthy",
+            "line": 30
           }
         ]
       },
@@ -1184,6 +1223,62 @@
         ]
       },
       {
+        "name": "BulkImportPage",
+        "file": "BulkImportPage.ts",
+        "relativePath": "tests/components/ui/BulkImportPage.ts",
+        "atcs": [
+          {
+            "id": "NF-02",
+            "method": "importLargeBranchFileWithRowErrors",
+            "line": 47
+          }
+        ]
+      },
+      {
+        "name": "CompatPage",
+        "file": "CompatPage.ts",
+        "relativePath": "tests/components/ui/CompatPage.ts",
+        "atcs": [
+          {
+            "id": "NF-04",
+            "method": "showSameResultInEveryBrowser",
+            "line": 77
+          }
+        ]
+      },
+      {
+        "name": "ContractsPage",
+        "file": "ContractsPage.ts",
+        "relativePath": "tests/components/ui/ContractsPage.ts",
+        "atcs": [
+          {
+            "id": "INT-001",
+            "method": "showUsernameColumnOfUserApps",
+            "line": 79
+          },
+          {
+            "id": "INT-002",
+            "method": "showServerOnlyRulesOnTheirField",
+            "line": 103
+          },
+          {
+            "id": "INT-003",
+            "method": "showClearMessageForEachStatusCode",
+            "line": 175
+          },
+          {
+            "id": "INT-004",
+            "method": "showEachValidationErrorOnItsField",
+            "line": 144
+          },
+          {
+            "id": "INT-005",
+            "method": "showErrorAndStopSpinnerWhenBackendDown",
+            "line": 228
+          }
+        ]
+      },
+      {
         "name": "DashboardPage",
         "file": "DashboardPage.ts",
         "relativePath": "tests/components/ui/DashboardPage.ts",
@@ -1207,6 +1302,18 @@
             "id": "DSH-004",
             "method": "redirectTenantUsersAwayFromDashboard",
             "line": 144
+          }
+        ]
+      },
+      {
+        "name": "LocalePage",
+        "file": "LocalePage.ts",
+        "relativePath": "tests/components/ui/LocalePage.ts",
+        "atcs": [
+          {
+            "id": "NF-08",
+            "method": "showAccentsAndDatesCorrectly",
+            "line": 70
           }
         ]
       },
@@ -1292,6 +1399,11 @@
         "file": "LogsPage.ts",
         "relativePath": "tests/components/ui/LogsPage.ts",
         "atcs": [
+          {
+            "id": "INT-008",
+            "method": "showSameInstantOnScreenAndCsv",
+            "line": 173
+          },
           {
             "id": "LOG-002",
             "method": "requireTenantAndDatesBeforeQuerying",
@@ -1397,6 +1509,43 @@
             "id": "AUT-042",
             "method": "redirectRootByRole",
             "line": 367
+          }
+        ]
+      },
+      {
+        "name": "SmokePage",
+        "file": "SmokePage.ts",
+        "relativePath": "tests/components/ui/SmokePage.ts",
+        "atcs": [
+          {
+            "id": "SMK-02",
+            "method": "reachDashboardAsAdmin",
+            "line": 81
+          },
+          {
+            "id": "SMK-03",
+            "method": "openTenantListAndDetail",
+            "line": 96
+          },
+          {
+            "id": "SMK-04",
+            "method": "reachPanelAsTenantAdmin",
+            "line": 124
+          },
+          {
+            "id": "SMK-05",
+            "method": "reachQueryLogsAsUserApp",
+            "line": 153
+          },
+          {
+            "id": "SMK-06",
+            "method": "createAndDeleteMinimalTenant",
+            "line": 172
+          },
+          {
+            "id": "SMK-07",
+            "method": "signOutEveryRole",
+            "line": 215
           }
         ]
       },
@@ -1590,14 +1739,20 @@
       "file": "UiTenantSteps.ts",
       "relativePath": "tests/components/steps/UiTenantSteps.ts",
       "methods": [
+        "addBranch",
+        "branchRows",
         "cleanup",
         "countByRnec",
         "createTenantId",
+        "createdAtOf",
         "disableTenant",
         "isActive",
+        "isActiveByRnec",
         "prepareExportTenant",
         "prepareTenant",
         "prepareUserApp",
+        "removeBranches",
+        "removeOperators",
         "removeTenant",
         "tenantStats",
         "totalOf"
@@ -1605,10 +1760,10 @@
     }
   ],
   "summary": {
-    "totalComponents": 32,
-    "totalATCs": 249,
-    "apiComponents": 22,
-    "uiComponents": 10,
+    "totalComponents": 39,
+    "totalATCs": 269,
+    "apiComponents": 24,
+    "uiComponents": 15,
     "stepsModules": 10
   }
 }

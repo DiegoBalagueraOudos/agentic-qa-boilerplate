@@ -401,6 +401,8 @@ bun run test:smoke         # smoke / @critical tests
 │   │   └── DataFactory.ts        # Dynamic data generation
 │   ├── utils/                    # Test utilities
 │   │   ├── decorators.ts         # @atc decorator
+│   │   ├── ScrubReporter.ts      # Redacts request secrets from failed-call errors (first reporter)
+│   │   ├── scrubSecrets.ts       # The redaction rules used by ScrubReporter
 │   │   └── jiraSync.ts           # TMS synchronization
 │   └── KataReporter.ts           # Terminal reporter
 │
